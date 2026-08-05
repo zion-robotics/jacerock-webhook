@@ -15,12 +15,7 @@ Meta WhatsApp Cloud API webhook server for Jace Rock Capital.
 
 ## Credentials
 
-| Item | Value |
-|---|---|
-| Phone Number ID | 1241747595686812 |
-| WhatsApp Account ID | 4499464150292083 |
-| Callback URL | https://webhook.jacerockcapital.com/webhook |
-| Verify Token | jacerock_webhook_2026 |
+All credentials are stored securely in environment variables on the server. Never commit real credentials to this repository.
 
 ---
 
@@ -53,14 +48,14 @@ npm start
 
 ---
 
-## Deployment (Railway)
+## Deployment (Render)
 
 1. Push this repo to GitHub (private)
-2. Go to your Railway project
-3. Click New Service -> Deploy from GitHub
-4. Select this repo
-5. Add environment variables in Railway dashboard under Variables
-6. Railway will auto-deploy and give you a public URL
+2. Go to your Render project
+3. Click New Service -> Web Service
+4. Connect your GitHub repo
+5. Add environment variables in Render dashboard under Environment
+6. Render will auto-deploy and give you a public URL
 
 ---
 
@@ -71,8 +66,8 @@ Once deployed, go to:
 developers.facebook.com -> Your App -> WhatsApp -> Configuration
 
 Enter:
-- **Callback URL:** `https://webhook.jacerockcapital.com/webhook`
-- **Verify Token:** `jacerock_webhook_2026`
+- **Callback URL:** your custom domain webhook URL
+- **Verify Token:** the value set in your VERIFY_TOKEN environment variable
 
 Click **Verify and Save.**
 
@@ -99,10 +94,10 @@ To use `webhook.jacerockcapital.com` instead of the Railway URL:
 1. Go to GoDaddy DNS settings for `jacerockcapital.com`
 2. Add a new CNAME record:
    - **Name:** `webhook`
-   - **Value:** your Railway app domain (e.g. `jacerock-webhook.railway.app`)
+   - **Value:** your Render app domain (e.g. `jacerock-webhook.onrender.com`)
    - **TTL:** 600
-3. In Railway dashboard, go to Settings -> Domains -> Add Custom Domain
-4. Enter `webhook.jacerockcapital.com`
+3. In Render dashboard, go to Settings -> Custom Domains -> Add Custom Domain
+4. Enter your custom domain
 5. Wait 10-30 minutes for DNS to propagate
 
 ---
