@@ -1,6 +1,4 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const axios = require("axios");
 require("dotenv").config();
 
@@ -11,12 +9,10 @@ const PORT = process.env.PORT || 3000;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
 const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
-const LOG_FILE = path.join(__dirname, "logs", "messages.log");
 
-// ─── Utility: Write to log file ───────────────────────────────────────────────
+// ─── Utility: Log event ───────────────────────────────────────────────────────
 function logEvent(data) {
-  const entry = `[${new Date().toISOString()}] ${JSON.stringify(data, null, 2)}\n\n`;
-  fs.appendFileSync(LOG_FILE, entry, "utf8");
+  console.log(`[${new Date().toISOString()}]`, JSON.stringify(data, null, 2));
 }
 
 // ─── Health Check ─────────────────────────────────────────────────────────────
