@@ -81,8 +81,8 @@ app.post("/webhook", (req, res) => {
       console.log("📩 Incoming message:", logData);
       logEvent(logData);
 
-      // Auto-reply (optional — remove or customize this)
-      sendMessage(from, `Hello ${senderName}, thank you for reaching out to Jace Rock Capital. We have received your message and will get back to you shortly.`);
+      // First-contact template (replaces old free-text auto-reply)
+      sendTemplateMessage(from, "welcome_message", [senderName]);
     }
 
     // Handle message status updates (sent, delivered, read, failed)
@@ -108,7 +108,7 @@ app.post("/webhook", (req, res) => {
   return res.status(200).json({ status: "received" });
 });
 
-// ─── Send WhatsApp Message ─────────────────────────────────────────────────────
+// ─── Send WhatsApp Message (plain text) ────────────────────────────────────────
 async function sendMessage(to, text) {
   try {
     const response = await axios.post(
@@ -133,6 +133,92 @@ async function sendMessage(to, text) {
   }
 }
 
+// ─── Allowed template names (must match Meta-approved templates exactly) ──────
+const APPROVED_TEMPLATES = [
+  "welcome_message",
+  "payment_received",
+  "payment_verified",
+  "transaction_completed",
+  "payment_unverified",
+  "transaction_on_hold",
+  "additional_info_required",
+];
+
+// ─── Send WhatsApp Template Message ────────────────────────────────────────────
+async function sendTemplateMessage(to, templateName, variables = []) {
+  if (!APPROVED_TEMPLATES.includes(templateName)) {
+    console.error("❌ Unknown/unapproved template name:", templateName);
+    return null;
+  }
+
+  try {
+    const components = variables.length
+      ? [
+          {
+            type: "body",
+            parameters: variables.map((v) => ({ type: "text", text: String(v) })),
+          },
+        ]
+      : [];
+
+    const response = await axios.post(
+      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to,
+        type: "template",
+        template: {
+          name: templateName,
+          language: { code: "en" },
+          components,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(
+      "✅ Template sent:",
+      templateName,
+      "to",
+      to,
+      "| Message ID:",
+      response.data.messages?.[0]?.id
+    );
+    return response.data;
+  } catch (error) {
+    console.error("❌ Failed to send template:", error.response?.data || error.message);
+    return null;
+  }
+}
+
+// ─── Send Template Endpoint (internal use — staff/dashboard trigger) ──────────
+app.post("/send-template", async (req, res) => {
+  const { to, templateName, variables } = req.body;
+
+  if (!to || !templateName) {
+    return res.status(400).json({ error: "Missing 'to' or 'templateName'" });
+  }
+
+  if (!APPROVED_TEMPLATES.includes(templateName)) {
+    return res.status(400).json({
+      error: "Unknown/unapproved template name",
+      allowed: APPROVED_TEMPLATES,
+    });
+  }
+
+  const result = await sendTemplateMessage(to, templateName, variables || []);
+
+  if (!result) {
+    return res.status(500).json({ error: "Failed to send template" });
+  }
+
+  return res.status(200).json({ status: "sent", data: result });
+});
+
 // ─── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚀 Jace Rock Capital Webhook running on port ${PORT}`);
@@ -140,4 +226,4 @@ app.listen(PORT, () => {
   console.log(`🕐 Started at: ${new Date().toISOString()}`);
 });
 
-module.exports = { sendMessage };
+module.exports = { sendMessage, sendTemplateMessage };
