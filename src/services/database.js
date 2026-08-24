@@ -72,6 +72,7 @@ async function setSession(whatsappNumber, step, sessionData = {}, transactionId 
         current_step: step,
         session_data: sessionData,
         transaction_id: transactionId,
+        bot_paused: false,
       });
   }
 }
@@ -79,8 +80,61 @@ async function setSession(whatsappNumber, step, sessionData = {}, transactionId 
 async function clearSession(whatsappNumber) {
   await supabase
     .from('conversation_sessions')
-    .update({ current_step: 'WELCOME', session_data: {}, transaction_id: null })
+    .update({
+      current_step: 'WELCOME',
+      session_data: {},
+      transaction_id: null,
+      bot_paused: false,
+      paused_by: null,
+      paused_at: null,
+    })
     .eq('whatsapp_number', whatsappNumber);
+}
+
+// ── PAUSE / RESUME BOT ────────────────────────────────────────────────────────
+
+async function pauseBot(whatsappNumber, staffName) {
+  const existing = await getSession(whatsappNumber);
+  if (existing) {
+    await supabase
+      .from('conversation_sessions')
+      .update({
+        bot_paused: true,
+        paused_by: staffName,
+        paused_at: new Date().toISOString(),
+      })
+      .eq('whatsapp_number', whatsappNumber);
+  } else {
+    await supabase
+      .from('conversation_sessions')
+      .insert({
+        whatsapp_number: whatsappNumber,
+        current_step: 'HUMAN_TAKEOVER',
+        bot_paused: true,
+        paused_by: staffName,
+        paused_at: new Date().toISOString(),
+      });
+  }
+}
+
+async function resumeBot(whatsappNumber) {
+  await supabase
+    .from('conversation_sessions')
+    .update({
+      bot_paused: false,
+      paused_by: null,
+      paused_at: null,
+    })
+    .eq('whatsapp_number', whatsappNumber);
+}
+
+async function isBotPaused(whatsappNumber) {
+  const { data } = await supabase
+    .from('conversation_sessions')
+    .select('bot_paused')
+    .eq('whatsapp_number', whatsappNumber)
+    .single();
+  return data?.bot_paused || false;
 }
 
 // ── EXCHANGE RATES ────────────────────────────────────────────────────────────
@@ -98,6 +152,16 @@ async function getRateByCurrencyPair(pair) {
     .from('exchange_rates')
     .select('*')
     .eq('currency_pair', pair)
+    .single();
+  return data;
+}
+
+async function updateExchangeRate(currencyPair, newRate, updatedBy) {
+  const { data } = await supabase
+    .from('exchange_rates')
+    .update({ rate: newRate, updated_by: updatedBy, updated_at: new Date().toISOString() })
+    .eq('currency_pair', currencyPair)
+    .select()
     .single();
   return data;
 }
@@ -126,7 +190,6 @@ async function getBankById(id) {
 async function createTransaction(whatsappNumber, customerId, kycName, currencyPair, rate) {
   const { data: refData } = await supabase.rpc('generate_transaction_reference');
   const reference = refData;
-
   const [fromCurrency, toCurrency] = currencyPair.split('_');
 
   const { data } = await supabase
@@ -167,6 +230,26 @@ async function getTransactionById(id) {
   return data;
 }
 
+async function getPendingTransactions() {
+  const { data } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('status', 'AWAITING_STAFF_APPROVAL')
+    .order('created_at', { ascending: false });
+  return data || [];
+}
+
+async function getAllTransactions(limit = 50) {
+  const { data } = await supabase
+    .from('transactions')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return data || [];
+}
+
+// ── AUDIT LOGS ────────────────────────────────────────────────────────────────
+
 async function logAudit(transactionId, customerId, action, oldStatus, newStatus, performedBy = 'BOT', notes = '') {
   await supabase.from('audit_logs').insert({
     transaction_id: transactionId,
@@ -179,6 +262,24 @@ async function logAudit(transactionId, customerId, action, oldStatus, newStatus,
   });
 }
 
+async function getAuditLogs(transactionId) {
+  const { data } = await supabase
+    .from('audit_logs')
+    .select('*')
+    .eq('transaction_id', transactionId)
+    .order('created_at', { ascending: true });
+  return data || [];
+}
+
+async function getAllAuditLogs(limit = 100) {
+  const { data } = await supabase
+    .from('audit_logs')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return data || [];
+}
+
 module.exports = {
   getOrCreateCustomer,
   updateCustomerKYC,
@@ -186,12 +287,20 @@ module.exports = {
   getSession,
   setSession,
   clearSession,
+  pauseBot,
+  resumeBot,
+  isBotPaused,
   getExchangeRates,
   getRateByCurrencyPair,
+  updateExchangeRate,
   getBankAccounts,
   getBankById,
   createTransaction,
   updateTransaction,
   getTransactionById,
+  getPendingTransactions,
+  getAllTransactions,
   logAudit,
+  getAuditLogs,
+  getAllAuditLogs,
 };
