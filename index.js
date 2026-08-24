@@ -64,6 +64,47 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+// ── Staff Send Message Directly (human takeover) ─────────────────────────────
+app.post('/staff/send-message', async (req, res) => {
+  const { to, message, staffName } = req.body;
+  if (!to || !message) return res.status(400).json({ error: "Missing 'to' or 'message'" });
+
+  const { sendText } = require('./src/services/whatsapp');
+  const result = await sendText(to, message);
+  if (!result) return res.status(500).json({ error: 'Failed to send message' });
+
+  const db = require('./src/services/database');
+  await db.logAudit(null, null, 'STAFF_MESSAGE_SENT', null, null, staffName || 'STAFF', `Message sent to ${to}: ${message}`);
+
+  return res.status(200).json({ status: 'sent', data: result });
+});
+
+// ── Pause Bot for a customer (staff takes over) ───────────────────────────────
+app.post('/staff/pause-bot', async (req, res) => {
+  const { whatsappNumber, staffName } = req.body;
+  if (!whatsappNumber) return res.status(400).json({ error: "Missing 'whatsappNumber'" });
+
+  const db = require('./src/services/database');
+  await db.pauseBot(whatsappNumber, staffName || 'STAFF');
+  await db.logAudit(null, null, 'BOT_PAUSED', null, null, staffName || 'STAFF', `Bot paused for ${whatsappNumber}`);
+
+  console.log(`⏸️  Bot paused for ${whatsappNumber} by ${staffName}`);
+  return res.status(200).json({ status: 'paused', whatsappNumber });
+});
+
+// ── Resume Bot for a customer ─────────────────────────────────────────────────
+app.post('/staff/resume-bot', async (req, res) => {
+  const { whatsappNumber, staffName } = req.body;
+  if (!whatsappNumber) return res.status(400).json({ error: "Missing 'whatsappNumber'" });
+
+  const db = require('./src/services/database');
+  await db.resumeBot(whatsappNumber);
+  await db.logAudit(null, null, 'BOT_RESUMED', null, null, staffName || 'STAFF', `Bot resumed for ${whatsappNumber}`);
+
+  console.log(`▶️  Bot resumed for ${whatsappNumber} by ${staffName}`);
+  return res.status(200).json({ status: 'resumed', whatsappNumber });
+});
+
 // ── Staff Template Trigger (used by dashboard) ────────────────────────────────
 app.post('/send-template', async (req, res) => {
   const { to, templateName, variables } = req.body;
