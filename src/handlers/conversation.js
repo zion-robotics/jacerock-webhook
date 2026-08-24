@@ -54,6 +54,13 @@ async function handleMessage(from, message, senderName) {
 
   console.log(`📍 Step: ${step} | From: ${from} | Type: ${msgType} | Reply: ${replyId || textBody}`);
 
+  // ── BOT PAUSED CHECK (Human Takeover) ────────────────────────────────────
+  const paused = await db.isBotPaused(from);
+  if (paused) {
+    console.log(`⏸️  Bot paused for ${from} — message handled by staff`);
+    return; // Staff handles this conversation from dashboard
+  }
+
   // GLOBAL RESTART
   if (textBody && RESTART_KEYWORDS.includes(textBody.toLowerCase())) {
     await db.clearSession(from);
