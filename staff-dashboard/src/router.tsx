@@ -1,16 +1,37 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/auth/LoginPage';
+import SetupPage from './pages/auth/SetupPage';
 
-function ProtectedRoute({ children, role }: { children: React.ReactNode; role?: string }) {
+function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
   if (!user) return <Navigate to="/login" replace />;
-  if (role && user.role !== role) return <Navigate to="/" replace />;
+  if (adminOnly && user.role !== 'ADMIN') return <Navigate to="/queue" replace />;
   return <>{children}</>;
 }
 
-export default function Router() {
+function AppRoutes() {
   const { user } = useAuthStore();
+  const { loading, setupRequired } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-primary flex items-center justify-center">
+        <div className="text-white text-sm animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  if (setupRequired) {
+    return (
+      <BrowserRouter>
+        <Routes>
+          <Route path="*" element={<SetupPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>
@@ -24,16 +45,16 @@ export default function Router() {
             : <Navigate to="/queue" replace />
         } />
         <Route path="/admin/*" element={
-          <ProtectedRoute role="ADMIN">
-            <div className="min-h-screen flex items-center justify-center">
-              <p className="text-slate-500">Admin dashboard coming soon</p>
+          <ProtectedRoute adminOnly>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+              <p className="text-slate-500 text-sm">Admin dashboard — coming next</p>
             </div>
           </ProtectedRoute>
         } />
         <Route path="/queue/*" element={
           <ProtectedRoute>
-            <div className="min-h-screen flex items-center justify-center">
-              <p className="text-slate-500">Staff queue coming soon</p>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+              <p className="text-slate-500 text-sm">Staff queue — coming next</p>
             </div>
           </ProtectedRoute>
         } />
@@ -41,4 +62,8 @@ export default function Router() {
       </Routes>
     </BrowserRouter>
   );
+}
+
+export default function Router() {
+  return <AppRoutes />;
 }
