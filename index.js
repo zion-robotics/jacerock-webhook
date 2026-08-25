@@ -1,202 +1,112 @@
-const express = require("express");
-const axios = require("axios");
-require("dotenv").config();
+const express = require('express');
+const { handleMessage } = require('./src/handlers/conversation');
+const { sendTemplate, APPROVED_TEMPLATES } = require('./src/services/whatsapp');
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
-const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
-const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
-// ─── Utility: Log event ───────────────────────────────────────────────────────
-function logEvent(data) {
-  console.log(`[${new Date().toISOString()}]`, JSON.stringify(data, null, 2));
-}
-
-// ─── Health Check ─────────────────────────────────────────────────────────────
-app.get("/", (req, res) => {
+// ── Health Check ──────────────────────────────────────────────────────────────
+app.get('/', (req, res) => {
   res.status(200).json({
-    status: "running",
-    service: "Jace Rock Capital WhatsApp Webhook",
+    status: 'running',
+    service: 'Jacerock Capital / AfrikBerry WhatsApp AI Platform',
     timestamp: new Date().toISOString(),
   });
 });
 
-// ─── Meta Webhook Verification (GET) ──────────────────────────────────────────
-app.get("/webhook", (req, res) => {
-  const mode = req.query["hub.mode"];
-  const token = req.query["hub.verify_token"];
-  const challenge = req.query["hub.challenge"];
+// ── Meta Webhook Verification ─────────────────────────────────────────────────
+app.get('/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-  if (mode === "subscribe" && token === VERIFY_TOKEN) {
-    console.log("✅ Webhook verified successfully by Meta.");
+  if (mode === 'subscribe' && token === VERIFY_TOKEN) {
+    console.log('✅ Webhook verified by Meta.');
     return res.status(200).send(challenge);
   }
 
-  console.error("❌ Webhook verification failed. Token mismatch.");
-  return res.status(403).json({ error: "Verification failed" });
+  console.error('❌ Webhook verification failed.');
+  return res.status(403).json({ error: 'Verification failed' });
 });
 
-// ─── Receive Incoming WhatsApp Events (POST) ───────────────────────────────────
-app.post("/webhook", (req, res) => {
-  const body = req.body;
+// ── Incoming WhatsApp Events ──────────────────────────────────────────────────
+app.post('/webhook', async (req, res) => {
+  res.status(200).json({ status: 'received' });
 
-  if (body.object !== "whatsapp_business_account") {
-    return res.status(404).json({ error: "Not a WhatsApp event" });
-  }
+  const body = req.body;
+  if (body.object !== 'whatsapp_business_account') return;
 
   try {
     const entry = body.entry?.[0];
     const changes = entry?.changes?.[0];
     const value = changes?.value;
 
-    // Handle incoming messages
     if (value?.messages) {
       const message = value.messages[0];
-      const from = message.from; // sender's WhatsApp number
-      const messageId = message.id;
-      const timestamp = message.timestamp;
+      const from = message.from;
       const contact = value.contacts?.[0];
-      const senderName = contact?.profile?.name || "Unknown";
+      const senderName = contact?.profile?.name || 'Valued Customer';
 
-      let messageContent = "";
-
-      if (message.type === "text") {
-        messageContent = message.text.body;
-      } else {
-        messageContent = `[${message.type} message received]`;
-      }
-
-      const logData = {
-        event: "incoming_message",
-        from,
-        senderName,
-        messageId,
-        messageContent,
-        timestamp: new Date(parseInt(timestamp) * 1000).toISOString(),
-      };
-
-      console.log("📩 Incoming message:", logData);
-      logEvent(logData);
-
-      // First-contact template (replaces old free-text auto-reply)
-      sendTemplateMessage(from, "welcome_message", [senderName]);
+      console.log(`📩 Message from ${from} | Type: ${message.type}`);
+      await handleMessage(from, message, senderName);
     }
 
-    // Handle message status updates (sent, delivered, read, failed)
     if (value?.statuses) {
       const status = value.statuses[0];
-      const logData = {
-        event: "message_status",
-        messageId: status.id,
-        recipientId: status.recipient_id,
-        status: status.status,
-        timestamp: new Date(parseInt(status.timestamp) * 1000).toISOString(),
-      };
-
-      console.log("📋 Status update:", logData);
-      logEvent(logData);
+      console.log(`📋 Status: ${status.status} | To: ${status.recipient_id}`);
     }
-  } catch (error) {
-    console.error("❌ Error processing webhook event:", error.message);
-    logEvent({ event: "error", error: error.message });
+  } catch (err) {
+    console.error('❌ Webhook handler error:', err.message);
   }
-
-  // Always respond 200 to Meta immediately
-  return res.status(200).json({ status: "received" });
 });
 
-// ─── Send WhatsApp Message (plain text) ────────────────────────────────────────
-async function sendMessage(to, text) {
-  try {
-    const response = await axios.post(
-      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "text",
-        text: { body: text },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log("✅ Message sent to", to, "| Message ID:", response.data.messages?.[0]?.id);
-    return response.data;
-  } catch (error) {
-    console.error("❌ Failed to send message:", error.response?.data || error.message);
-  }
-}
+// ── Staff Send Message Directly (human takeover) ─────────────────────────────
+app.post('/staff/send-message', async (req, res) => {
+  const { to, message, staffName } = req.body;
+  if (!to || !message) return res.status(400).json({ error: "Missing 'to' or 'message'" });
 
-// ─── Allowed template names (must match Meta-approved templates exactly) ──────
-const APPROVED_TEMPLATES = [
-  "welcome_message",
-  "payment_received",
-  "payment_verified",
-  "transaction_completed",
-  "payment_unverified",
-  "transaction_on_hold",
-  "additional_info_required",
-];
+  const { sendText } = require('./src/services/whatsapp');
+  const result = await sendText(to, message);
+  if (!result) return res.status(500).json({ error: 'Failed to send message' });
 
-// ─── Send WhatsApp Template Message ────────────────────────────────────────────
-async function sendTemplateMessage(to, templateName, variables = []) {
-  if (!APPROVED_TEMPLATES.includes(templateName)) {
-    console.error("❌ Unknown/unapproved template name:", templateName);
-    return null;
-  }
+  const db = require('./src/services/database');
+  await db.logAudit(null, null, 'STAFF_MESSAGE_SENT', null, null, staffName || 'STAFF', `Message sent to ${to}: ${message}`);
 
-  try {
-    const components = variables.length
-      ? [
-          {
-            type: "body",
-            parameters: variables.map((v) => ({ type: "text", text: String(v) })),
-          },
-        ]
-      : [];
+  return res.status(200).json({ status: 'sent', data: result });
+});
 
-    const response = await axios.post(
-      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to,
-        type: "template",
-        template: {
-          name: templateName,
-          language: { code: "en" },
-          components,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log(
-      "✅ Template sent:",
-      templateName,
-      "to",
-      to,
-      "| Message ID:",
-      response.data.messages?.[0]?.id
-    );
-    return response.data;
-  } catch (error) {
-    console.error("❌ Failed to send template:", error.response?.data || error.message);
-    return null;
-  }
-}
+// ── Pause Bot for a customer (staff takes over) ───────────────────────────────
+app.post('/staff/pause-bot', async (req, res) => {
+  const { whatsappNumber, staffName } = req.body;
+  if (!whatsappNumber) return res.status(400).json({ error: "Missing 'whatsappNumber'" });
 
-// ─── Send Template Endpoint (internal use — staff/dashboard trigger) ──────────
-app.post("/send-template", async (req, res) => {
+  const db = require('./src/services/database');
+  await db.pauseBot(whatsappNumber, staffName || 'STAFF');
+  await db.logAudit(null, null, 'BOT_PAUSED', null, null, staffName || 'STAFF', `Bot paused for ${whatsappNumber}`);
+
+  console.log(`⏸️  Bot paused for ${whatsappNumber} by ${staffName}`);
+  return res.status(200).json({ status: 'paused', whatsappNumber });
+});
+
+// ── Resume Bot for a customer ─────────────────────────────────────────────────
+app.post('/staff/resume-bot', async (req, res) => {
+  const { whatsappNumber, staffName } = req.body;
+  if (!whatsappNumber) return res.status(400).json({ error: "Missing 'whatsappNumber'" });
+
+  const db = require('./src/services/database');
+  await db.resumeBot(whatsappNumber);
+  await db.logAudit(null, null, 'BOT_RESUMED', null, null, staffName || 'STAFF', `Bot resumed for ${whatsappNumber}`);
+
+  console.log(`▶️  Bot resumed for ${whatsappNumber} by ${staffName}`);
+  return res.status(200).json({ status: 'resumed', whatsappNumber });
+});
+
+// ── Staff Template Trigger (used by dashboard) ────────────────────────────────
+app.post('/send-template', async (req, res) => {
   const { to, templateName, variables } = req.body;
 
   if (!to || !templateName) {
@@ -204,26 +114,17 @@ app.post("/send-template", async (req, res) => {
   }
 
   if (!APPROVED_TEMPLATES.includes(templateName)) {
-    return res.status(400).json({
-      error: "Unknown/unapproved template name",
-      allowed: APPROVED_TEMPLATES,
-    });
+    return res.status(400).json({ error: 'Unknown template', allowed: APPROVED_TEMPLATES });
   }
 
-  const result = await sendTemplateMessage(to, templateName, variables || []);
+  const result = await sendTemplate(to, templateName, variables || []);
+  if (!result) return res.status(500).json({ error: 'Failed to send template' });
 
-  if (!result) {
-    return res.status(500).json({ error: "Failed to send template" });
-  }
-
-  return res.status(200).json({ status: "sent", data: result });
+  return res.status(200).json({ status: 'sent', data: result });
 });
 
-// ─── Start Server ──────────────────────────────────────────────────────────────
+// ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`🚀 Jace Rock Capital Webhook running on port ${PORT}`);
-  console.log(`📡 Webhook URL: /webhook`);
+  console.log(`🚀 Jacerock Capital Webhook running on port ${PORT}`);
   console.log(`🕐 Started at: ${new Date().toISOString()}`);
 });
-
-module.exports = { sendMessage, sendTemplateMessage };
