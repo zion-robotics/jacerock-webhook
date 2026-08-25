@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { useAuthStore } from '../store/authStore';
-import { StaffUser } from '../types';
+import type { StaffUser } from '../types';
 
 export function useAuth() {
   const { setUser, setSession, logout } = useAuthStore();

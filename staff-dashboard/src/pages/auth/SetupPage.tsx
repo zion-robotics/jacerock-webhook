@@ -36,7 +36,7 @@ export default function SetupPage() {
 
     try {
       // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
       });
