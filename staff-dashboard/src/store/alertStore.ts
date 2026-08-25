@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Transaction } from '../types';
+import type { Transaction } from '../types';
 
 interface AlertState {
   pendingCount: number;

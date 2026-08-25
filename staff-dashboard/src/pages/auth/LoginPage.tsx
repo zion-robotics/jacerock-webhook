@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import { useAuthStore } from '../../store/authStore';
-import { StaffUser } from '../../types';
+import type { StaffUser } from '../../types';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
@@ -83,7 +83,7 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-          <p className="text-center text-xs text-slate-400 mt-6">Powered by Zion Robotics</p>
+          
         </div>
       </div>
     </div>
