@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
 import toast from 'react-hot-toast';
 import { Eye, EyeOff, Shield } from 'lucide-react';
@@ -154,12 +154,6 @@ export default function SetupPage() {
 
           <p className="text-center text-xs text-slate-400 mt-6">
             This page is only shown once. After setup, only the login page will appear.
-          </p>
-          <p className="text-center text-sm text-slate-500 mt-3">
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-accent hover:text-indigo-700">
-              Log in
-            </Link>
           </p>
         </div>
 
