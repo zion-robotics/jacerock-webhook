@@ -157,7 +157,6 @@ export default function SetupPage() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-slate-500 mt-4">Powered by Zion Robotics</p>
       </div>
     </div>
   );
