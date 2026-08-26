@@ -6,6 +6,8 @@ import SetupPage from './pages/auth/SetupPage';
 import AdminLayout from './components/layout/AdminLayout';
 import StaffLayout from './components/layout/StaffLayout';
 import OverviewPage from './pages/admin/OverviewPage';
+import AllTransactionsPage from './pages/admin/AllTransactionsPage';
+import QueuePage from './pages/staff/QueuePage';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
@@ -49,13 +51,9 @@ function AppRoutes() {
         } />
 
         {/* Admin Routes */}
-        <Route path="/admin" element={
-          <ProtectedRoute adminOnly>
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
+        <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
           <Route index element={<OverviewPage />} />
-          <Route path="transactions" element={<div className="text-slate-500 text-sm p-4">Transactions page coming next</div>} />
+          <Route path="transactions" element={<AllTransactionsPage />} />
           <Route path="staff" element={<div className="text-slate-500 text-sm p-4">Staff management coming next</div>} />
           <Route path="logs" element={<div className="text-slate-500 text-sm p-4">Activity logs coming next</div>} />
           <Route path="rates" element={<div className="text-slate-500 text-sm p-4">Exchange rates coming next</div>} />
@@ -63,12 +61,8 @@ function AppRoutes() {
         </Route>
 
         {/* Staff Routes */}
-        <Route path="/queue" element={
-          <ProtectedRoute>
-            <StaffLayout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<div className="text-slate-500 text-sm p-4">Transaction queue coming next</div>} />
+        <Route path="/queue" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
+          <Route index element={<QueuePage />} />
           <Route path="chat" element={<div className="text-slate-500 text-sm p-4">Live chat coming next</div>} />
           <Route path="transaction/:id" element={<div className="text-slate-500 text-sm p-4">Transaction detail coming next</div>} />
         </Route>
