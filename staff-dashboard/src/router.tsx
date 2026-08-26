@@ -8,6 +8,7 @@ import StaffLayout from './components/layout/StaffLayout';
 import OverviewPage from './pages/admin/OverviewPage';
 import AllTransactionsPage from './pages/admin/AllTransactionsPage';
 import QueuePage from './pages/staff/QueuePage';
+import TransactionDetailPage from './pages/staff/TransactionDetailPage';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
@@ -64,7 +65,7 @@ function AppRoutes() {
         <Route path="/queue" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
           <Route index element={<QueuePage />} />
           <Route path="chat" element={<div className="text-slate-500 text-sm p-4">Live chat coming next</div>} />
-          <Route path="transaction/:id" element={<div className="text-slate-500 text-sm p-4">Transaction detail coming next</div>} />
+          <Route path="transaction/:id" element={<TransactionDetailPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
