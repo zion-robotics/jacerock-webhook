@@ -147,7 +147,6 @@ export default function LoginPage() {
               </linearGradient>
             </defs>
 
-            {/* faint grid backdrop, ties back to the flat fintech direction */}
             {Array.from({ length: 10 }).map((_, i) => (
               <line key={`v-${i}`} x1={i * 40} y1="0" x2={i * 40} y2="600" stroke="white" strokeOpacity="0.04" strokeWidth="1" />
             ))}
@@ -155,7 +154,6 @@ export default function LoginPage() {
               <line key={`h-${i}`} x1="0" y1={i * 40} x2="400" y2={i * 40} stroke="white" strokeOpacity="0.04" strokeWidth="1" />
             ))}
 
-            {/* terrazzo-style accent block */}
             <rect x="230" y="70" width="130" height="70" rx="10" fill="#e7e5df" />
             <circle cx="255" cy="95" r="2.5" fill="#93c5cf" />
             <circle cx="280" cy="115" r="2" fill="#0f766e" />
@@ -163,7 +161,6 @@ export default function LoginPage() {
             <circle cx="335" cy="120" r="2" fill="#93c5cf" />
             <circle cx="270" cy="130" r="2" fill="#0f766e" />
 
-            {/* static upper tube */}
             <path
               d="M20 40 C 100 40, 100 130, 200 130 S 320 220, 260 260"
               stroke="url(#tube)"
@@ -172,7 +169,6 @@ export default function LoginPage() {
               strokeLinecap="round"
             />
 
-            {/* main looping tube the ball travels along */}
             <path
               id="mainTube"
               d="M40 260 C 140 260, 140 380, 260 380 S 380 470, 300 520 S 140 560, 60 500"
@@ -182,10 +178,8 @@ export default function LoginPage() {
               strokeLinecap="round"
             />
 
-            {/* teal glow where the tube meets the terrazzo block, the one place the two accent colors touch */}
             <circle cx="260" cy="140" r="16" fill="#0f766e" opacity="0.25" />
 
-            {/* chrome ball animating along the main tube */}
             <circle r="11" fill="url(#chrome)">
               <animateMotion
                 dur="5s"
@@ -194,17 +188,11 @@ export default function LoginPage() {
               />
             </circle>
 
-            {/* second static terrazzo block, lower left, echoes the reference set */}
             <rect x="20" y="440" width="70" height="70" rx="10" fill="#e7e5df" opacity="0.9" />
             <circle cx="40" cy="465" r="2" fill="#94a3b8" />
             <circle cx="60" cy="480" r="2" fill="#93c5cf" />
             <circle cx="50" cy="500" r="2" fill="#0f766e" />
           </svg>
-
-          <div className="absolute bottom-8 left-8 right-8">
-            <p className="text-white text-sm font-medium">Jacerock Capital</p>
-            <p className="text-blue-200/70 text-xs mt-1">Staff operations dashboard</p>
-          </div>
         </div>
       </div>
     </div>
