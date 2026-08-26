@@ -9,8 +9,7 @@ import {
   TrendingUp, Users, AlertTriangle
 } from 'lucide-react';
 import {
-  ResponsiveContainer, LineChart, Line, XAxis, YAxis,
-  CartesianGrid, Tooltip, BarChart, Bar, Cell
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell
 } from 'recharts';
 
 export default function OverviewPage() {
@@ -94,23 +93,6 @@ export default function OverviewPage() {
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  // Volume trend: last 14 days, summed by day
-  const volumeTrend = useMemo(() => {
-    const days: { date: string; volume: number }[] = [];
-    const today = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().slice(0, 10);
-      const label = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-      const volume = allTransactions
-        .filter(t => t.created_at?.slice(0, 10) === key)
-        .reduce((sum, t) => sum + (parseFloat(t.settlement_amount_ngn as unknown as string) || 0), 0);
-      days.push({ date: label, volume });
-    }
-    return days;
-  }, [allTransactions]);
-
   // Weekly activity: count of transactions per weekday, last 7 days
   const weeklyActivity = useMemo(() => {
     const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -165,7 +147,7 @@ export default function OverviewPage() {
           value={stats.completed}
           subtitle="settled"
           icon={<CheckCircle className="w-5 h-5" />}
-          color="green"
+          color="teal"
         />
         <StatsCard
           title="Rejected"
@@ -179,7 +161,7 @@ export default function OverviewPage() {
           value={formatNGN(stats.totalVolumeNGN)}
           subtitle="settlement NGN"
           icon={<TrendingUp className="w-5 h-5" />}
-          color="teal"
+          color="blue"
         />
         <StatsCard
           title="Active Staff"
@@ -205,75 +187,42 @@ export default function OverviewPage() {
         </div>
       )}
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Volume trend - takes 2 cols */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="font-semibold text-slate-800 text-sm">Volume Trend</h3>
-              <p className="text-xs text-slate-400 mt-0.5">Last 14 days, settlement NGN</p>
-            </div>
+      {/* Weekly activity, now full width since Volume Trend is gone */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="font-semibold text-slate-800 text-sm">Weekly Activity</h3>
+            <p className="text-xs text-slate-400 mt-0.5">Transactions per day, last 7 days</p>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={volumeTrend} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
-              />
-              <Tooltip
-                formatter={(value) => [formatNGN(Number(value ?? 0)), 'Volume']}
-                contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="volume"
-                stroke="#0f766e"
-                strokeWidth={2.5}
-                dot={false}
-                activeDot={{ r: 5, fill: '#0f766e' }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          {weeklyActivity[peakDayIndex]?.count > 0 && (
+            <span className="text-xs font-medium text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+              Peak: {weeklyActivity[peakDayIndex].day}
+            </span>
+          )}
         </div>
-
-        {/* Weekly activity bar chart */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-5">
-          <h3 className="font-semibold text-slate-800 text-sm">Most Active Day</h3>
-          <p className="text-xs text-slate-400 mt-0.5 mb-4">Transactions this week</p>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={weeklyActivity} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-              <XAxis
-                dataKey="day"
-                tick={{ fontSize: 11, fill: '#94a3b8' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis hide />
-              <Tooltip
-                cursor={{ fill: '#f0fdfa' }}
-                contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
-              />
-              <Bar dataKey="count" radius={[6, 6, 0, 0]}>
-                {weeklyActivity.map((_, index) => (
-                  <Cell
-                    key={index}
-                    fill={index === peakDayIndex ? '#0f766e' : '#99f6e4'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={weeklyActivity} margin={{ top: 5, right: 0, left: -20, bottom: 0 }} barCategoryGap="30%">
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 12, fill: '#94a3b8' }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis hide />
+            <Tooltip
+              cursor={{ fill: '#f0fdfa' }}
+              contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
+            />
+            <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+              {weeklyActivity.map((_, index) => (
+                <Cell
+                  key={index}
+                  fill={index === peakDayIndex ? '#0f766e' : '#a5d8d0'}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       {/* Recent transactions */}
