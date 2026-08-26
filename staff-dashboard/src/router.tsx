@@ -3,6 +3,8 @@ import { useAuthStore } from './store/authStore';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './pages/auth/LoginPage';
 import SetupPage from './pages/auth/SetupPage';
+import AdminLayout from './components/layout/AdminLayout';
+import StaffLayout from './components/layout/StaffLayout';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
@@ -44,20 +46,32 @@ function AppRoutes() {
             ? <Navigate to="/admin" replace />
             : <Navigate to="/queue" replace />
         } />
-        <Route path="/admin/*" element={
+
+        {/* Admin Routes */}
+        <Route path="/admin" element={
           <ProtectedRoute adminOnly>
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-              <p className="text-slate-500 text-sm">Admin dashboard — coming next</p>
-            </div>
+            <AdminLayout />
           </ProtectedRoute>
-        } />
-        <Route path="/queue/*" element={
+        }>
+          <Route index element={<div className="text-slate-500 text-sm p-4">Overview page coming next</div>} />
+          <Route path="transactions" element={<div className="text-slate-500 text-sm p-4">Transactions page coming next</div>} />
+          <Route path="staff" element={<div className="text-slate-500 text-sm p-4">Staff management coming next</div>} />
+          <Route path="logs" element={<div className="text-slate-500 text-sm p-4">Activity logs coming next</div>} />
+          <Route path="rates" element={<div className="text-slate-500 text-sm p-4">Exchange rates coming next</div>} />
+          <Route path="banks" element={<div className="text-slate-500 text-sm p-4">Bank accounts coming next</div>} />
+        </Route>
+
+        {/* Staff Routes */}
+        <Route path="/queue" element={
           <ProtectedRoute>
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-              <p className="text-slate-500 text-sm">Staff queue — coming next</p>
-            </div>
+            <StaffLayout />
           </ProtectedRoute>
-        } />
+        }>
+          <Route index element={<div className="text-slate-500 text-sm p-4">Transaction queue coming next</div>} />
+          <Route path="chat" element={<div className="text-slate-500 text-sm p-4">Live chat coming next</div>} />
+          <Route path="transaction/:id" element={<div className="text-slate-500 text-sm p-4">Transaction detail coming next</div>} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
