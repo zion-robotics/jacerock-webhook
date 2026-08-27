@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
+  collapsed?: boolean;
 }
 
 const adminLinks = [
@@ -26,11 +27,12 @@ const staffLinks = [
   { to: '/queue/chat', icon: MessageSquare, label: 'Live Chat' },
 ];
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
+export default function Sidebar({ open, onClose, collapsed = false }: SidebarProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
   const links = isAdmin ? adminLinks : staffLinks;
+  const widthClass = collapsed ? 'lg:w-20' : 'lg:w-64';
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -41,7 +43,6 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Overlay on mobile */}
       {open && (
         <div
           className="fixed inset-0 bg-black/50 z-20 lg:hidden"
@@ -49,33 +50,41 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-primary z-30 flex flex-col
-        transform transition-transform duration-300
+        fixed top-0 left-0 h-full w-64 ${widthClass} bg-primary z-30 flex flex-col
+        transform transition-all duration-300
         ${open ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
       `}>
         {/* Logo */}
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
-          <div>
-            <h1 className="text-white font-bold text-lg leading-tight">Jacerock</h1>
-            <p className="text-slate-400 text-xs">AfrikBerry Dashboard</p>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-white lg:hidden">
+          {collapsed ? (
+            <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center text-white font-bold text-sm mx-auto">
+              J
+            </div>
+          ) : (
+            <div>
+              <h1 className="text-white font-bold text-lg leading-tight">Jacerock</h1>
+              <p className="text-slate-400 text-xs">AfrikBerry Dashboard</p>
+            </div>
+          )}
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white lg:hidden"
+            aria-label="Close menu"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Role badge */}
-        <div className="px-6 py-3">
-          <span className={`
-            text-xs font-semibold px-2 py-1 rounded-full
-            ${isAdmin ? 'bg-accent text-white' : 'bg-slate-700 text-slate-300'}
-          `}>
-            {isAdmin ? 'Admin' : 'Staff'}
-          </span>
-        </div>
+        {!collapsed && (
+          <div className="px-6 py-3">
+            <span className="text-xs font-semibold px-2 py-1 rounded-full bg-accent text-white">
+              {isAdmin ? 'Admin' : 'Staff'}
+            </span>
+          </div>
+        )}
 
         {/* Nav links */}
         <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
@@ -85,8 +94,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               to={to}
               end={end}
               onClick={onClose}
+              title={collapsed ? label : undefined}
               className={({ isActive }) => `
                 flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors
+                ${collapsed ? 'justify-center px-2' : ''}
                 ${isActive
                   ? 'bg-accent text-white'
                   : 'text-slate-400 hover:text-white hover:bg-slate-700'
@@ -94,30 +105,34 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               `}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
-              {label}
+              {!collapsed && label}
             </NavLink>
           ))}
         </nav>
 
         {/* User info and logout */}
         <div className="p-4 border-t border-slate-700">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+          <div className={`flex items-center gap-3 mb-3 ${collapsed ? 'justify-center' : ''}`}>
+            <div className="w-8 h-8 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white text-xs font-bold">
                 {user?.full_name?.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">{user?.full_name}</p>
-              <p className="text-slate-400 text-xs truncate">{user?.email}</p>
-            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">{user?.full_name}</p>
+                <p className="text-slate-400 text-xs truncate">{user?.email}</p>
+              </div>
+            )}
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 text-slate-400 hover:text-white text-sm w-full px-2 py-1.5 rounded-lg hover:bg-slate-700 transition-colors"
+            title={collapsed ? 'Sign out' : undefined}
+            aria-label="Sign out"
+            className={`flex items-center gap-2 text-slate-400 hover:text-white text-sm w-full px-2 py-1.5 rounded-lg hover:bg-slate-700 transition-colors ${collapsed ? 'justify-center' : ''}`}
           >
             <LogOut className="w-4 h-4" />
-            Sign out
+            {!collapsed && 'Sign out'}
           </button>
         </div>
       </aside>
