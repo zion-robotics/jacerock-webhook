@@ -93,7 +93,6 @@ export default function OverviewPage() {
     return `${Math.floor(hrs / 24)}d ago`;
   }
 
-  // Weekly activity: count of transactions per weekday, last 7 days
   const weeklyActivity = useMemo(() => {
     const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const counts = new Array(7).fill(0);
@@ -114,8 +113,8 @@ export default function OverviewPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="space-y-5 animate-pulse">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl border border-slate-200 h-28" />
           ))}
@@ -125,9 +124,9 @@ export default function OverviewPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
         <StatsCard
           title="Total Transactions"
           value={stats.total}
@@ -174,7 +173,7 @@ export default function OverviewPage() {
 
       {/* Pending alert */}
       {stats.pending > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
           <div>
             <p className="text-amber-800 font-semibold text-sm">
@@ -187,9 +186,9 @@ export default function OverviewPage() {
         </div>
       )}
 
-      {/* Weekly activity, now full width since Volume Trend is gone */}
+      {/* Weekly activity */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="font-semibold text-slate-800 text-sm">Weekly Activity</h3>
             <p className="text-xs text-slate-400 mt-0.5">Transactions per day, last 7 days</p>
@@ -227,49 +226,49 @@ export default function OverviewPage() {
 
       {/* Recent transactions */}
       <div className="bg-white rounded-2xl border border-slate-200">
-        <div className="px-5 py-4 border-b border-slate-100">
+        <div className="px-6 py-5 border-b border-slate-100">
           <h3 className="font-semibold text-slate-800 text-sm">Recent Transactions</h3>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-5 py-3">Reference</th>
-                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-5 py-3">Customer</th>
-                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-5 py-3 hidden md:table-cell">Pair</th>
-                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-5 py-3 hidden md:table-cell">Amount</th>
-                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-5 py-3">Status</th>
-                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-5 py-3 hidden lg:table-cell">Time</th>
+                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-6 py-3">Reference</th>
+                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-6 py-3">Customer</th>
+                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-6 py-3 hidden md:table-cell">Pair</th>
+                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-6 py-3 hidden md:table-cell">Amount</th>
+                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-6 py-3">Status</th>
+                <th className="text-left text-xs font-semibold text-slate-400 uppercase px-6 py-3 hidden lg:table-cell">Time</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {recentTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-slate-400 text-sm">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-400 text-sm">
                     No transactions yet
                   </td>
                 </tr>
               ) : (
                 recentTransactions.map((tx) => (
                   <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-5 py-3">
+                    <td className="px-6 py-3.5">
                       <span className="text-xs font-mono text-slate-600">{tx.reference}</span>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-6 py-3.5">
                       <span className="text-sm text-slate-700">{tx.kyc_name || tx.whatsapp_number}</span>
                     </td>
-                    <td className="px-5 py-3 hidden md:table-cell">
+                    <td className="px-6 py-3.5 hidden md:table-cell">
                       <span className="text-sm text-slate-600">{tx.currency_pair?.replace('_', ' → ')}</span>
                     </td>
-                    <td className="px-5 py-3 hidden md:table-cell">
+                    <td className="px-6 py-3.5 hidden md:table-cell">
                       <span className="text-sm font-medium text-slate-700">
                         {tx.amount ? `${tx.amount} ${tx.from_currency}` : '—'}
                       </span>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-6 py-3.5">
                       <StatusBadge status={tx.status} />
                     </td>
-                    <td className="px-5 py-3 hidden lg:table-cell">
+                    <td className="px-6 py-3.5 hidden lg:table-cell">
                       <span className="text-xs text-slate-400">{timeAgo(tx.created_at)}</span>
                     </td>
                   </tr>
