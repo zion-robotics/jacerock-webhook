@@ -20,14 +20,10 @@ export default function StaffLayout() {
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header
-          onMenuClick={() => setSidebarOpen(true)}
-          onCollapseClick={() => setSidebarCollapsed((v) => !v)}
-          collapsed={sidebarCollapsed}
-          title={title}
-        />
+        <Header onMenuClick={() => setSidebarOpen(true)} title={title} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
