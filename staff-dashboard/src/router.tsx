@@ -12,6 +12,8 @@ import TransactionDetailPage from './pages/staff/TransactionDetailPage';
 import StaffManagementPage from './pages/admin/StaffManagementPage';
 import ExchangeRatesPage from './pages/admin/ExchangeRatesPage';
 import BankAccountsPage from './pages/admin/BankAccountsPage';
+import ActivityLogsPage from './pages/admin/ActivityLogsPage';
+import ChatPage from './pages/staff/ChatPage';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
@@ -59,7 +61,7 @@ function AppRoutes() {
           <Route index element={<OverviewPage />} />
           <Route path="transactions" element={<AllTransactionsPage />} />
           <Route path="staff" element={<StaffManagementPage />} />
-          <Route path="logs" element={<div className="text-slate-500 text-sm p-4">Activity logs coming next</div>} />
+          <Route path="logs" element={<ActivityLogsPage />} />
           <Route path="rates" element={<ExchangeRatesPage />} />
           <Route path="banks" element={<BankAccountsPage />} />
         </Route>
@@ -67,7 +69,7 @@ function AppRoutes() {
         {/* Staff Routes */}
         <Route path="/queue" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
           <Route index element={<QueuePage />} />
-          <Route path="chat" element={<div className="text-slate-500 text-sm p-4">Live chat coming next</div>} />
+          <Route path="chat" element={<ChatPage />} />
           <Route path="transaction/:id" element={<TransactionDetailPage />} />
         </Route>
 
