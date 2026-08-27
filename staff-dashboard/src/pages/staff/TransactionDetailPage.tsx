@@ -322,7 +322,7 @@ export default function TransactionDetailPage() {
                 <ZoomIn className="w-3 h-3" />
                 {receiptZoomed ? 'Close' : 'Zoom In'}
               </button>
-              
+              <a
                 href={tx.receipt_url}
                 target="_blank"
                 rel="noreferrer"
