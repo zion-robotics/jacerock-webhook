@@ -14,10 +14,10 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onMenuClick}
-          className="lg:hidden text-slate-500 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+          className="lg:hidden flex items-center justify-center w-11 h-11 -ml-1 rounded-lg border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 hover:border-slate-300 active:scale-95 transition-all"
           aria-label="Open menu"
         >
-          <Menu className="w-5 h-5" />
+          <Menu className="w-5 h-5" strokeWidth={2.25} />
         </button>
         <h2 className="text-slate-800 font-semibold text-base md:text-lg">{title}</h2>
       </div>
