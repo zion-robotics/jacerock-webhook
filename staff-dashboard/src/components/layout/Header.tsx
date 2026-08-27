@@ -1,14 +1,12 @@
-import { Menu, Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, Bell } from 'lucide-react';
 import { useAlertStore } from '../../store/alertStore';
 
 interface HeaderProps {
   onMenuClick: () => void;
-  onCollapseClick?: () => void;
-  collapsed?: boolean;
   title: string;
 }
 
-export default function Header({ onMenuClick, onCollapseClick, collapsed, title }: HeaderProps) {
+export default function Header({ onMenuClick, title }: HeaderProps) {
   const { pendingCount } = useAlertStore();
 
   return (
@@ -21,17 +19,6 @@ export default function Header({ onMenuClick, onCollapseClick, collapsed, title 
         >
           <Menu className="w-5 h-5" />
         </button>
-
-        {onCollapseClick && (
-          <button
-            onClick={onCollapseClick}
-            className="hidden lg:inline-flex text-slate-500 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
-          </button>
-        )}
-
         <h2 className="text-slate-800 font-semibold text-base md:text-lg">{title}</h2>
       </div>
 
