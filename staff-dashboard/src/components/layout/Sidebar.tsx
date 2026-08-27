@@ -1,7 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ListChecks, Users, Activity,
-  TrendingUp, Landmark, LogOut, X, MessageSquare
+  TrendingUp, Landmark, LogOut, X, MessageSquare,
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../services/supabase';
@@ -11,6 +12,7 @@ interface SidebarProps {
   open: boolean;
   onClose: () => void;
   collapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const adminLinks = [
@@ -27,7 +29,7 @@ const staffLinks = [
   { to: '/queue/chat', icon: MessageSquare, label: 'Live Chat' },
 ];
 
-export default function Sidebar({ open, onClose, collapsed = false }: SidebarProps) {
+export default function Sidebar({ open, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'ADMIN';
@@ -51,11 +53,22 @@ export default function Sidebar({ open, onClose, collapsed = false }: SidebarPro
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-full w-64 ${widthClass} bg-primary z-30 flex flex-col
+        fixed top-0 left-0 h-full w-64 ${widthClass} bg-primary z-30 flex flex-col relative
         transform transition-all duration-300
         ${open ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
       `}>
+        {/* Floating collapse toggle, sits on the sidebar's own edge, desktop only */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="hidden lg:flex absolute top-7 -right-3 w-6 h-6 rounded-full bg-white border border-slate-200 shadow-sm items-center justify-center text-slate-500 hover:text-slate-700 hover:border-slate-300 z-40 transition-colors"
+          >
+            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+          </button>
+        )}
+
         {/* Logo */}
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           {collapsed ? (
