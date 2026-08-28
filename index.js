@@ -157,6 +157,43 @@ app.post('/send-template', async (req, res) => {
   return res.status(200).json({ status: 'sent', data: result });
 });
 
+// ── Admin: Create Staff Account (server-side, no session swap, no email) ─────
+app.post('/admin/create-staff', async (req, res) => {
+  const { fullName, email, password, role } = req.body;
+  if (!fullName || !email || !password || !role) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  const supabaseAdmin = require('./src/config/supabaseAdmin');
+
+  try {
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (authError) throw authError;
+
+    const { error: staffError } = await supabaseAdmin
+      .from('staff_users')
+      .insert({
+        full_name: fullName,
+        email,
+        role,
+        is_active: true,
+      });
+    if (staffError) throw staffError;
+
+    return res.status(200).json({ status: 'created', userId: authData.user.id });
+  } catch (err) {
+    console.error('❌ create-staff error:', err.message);
+    return res.status(500).json({ error: err.message || 'Failed to create staff account' });
+  }
+});
+
 // ── Start Server ──────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚀 Jacerock Capital Webhook running on port ${PORT}`);
