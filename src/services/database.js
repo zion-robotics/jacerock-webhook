@@ -283,22 +283,28 @@ async function getAllAuditLogs(limit = 100) {
 // ── MESSAGES ──────────────────────────────────────────────────────────────────
 
 async function saveMessage(whatsappNumber, direction, content, senderName = '', sentBy = 'BOT') {
-  await supabase.from('messages').insert({
+  const { error } = await supabase.from('messages').insert({
     whatsapp_number: whatsappNumber,
     direction,
     content,
     sender_name: senderName,
     sent_by: sentBy,
   });
+  if (error) {
+    console.error('❌ saveMessage failed:', error.message);
+  } else {
+    console.log(`✅ saveMessage success: ${direction} for ${whatsappNumber}`);
+  }
 }
 
 async function getMessages(whatsappNumber, limit = 50) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('messages')
     .select('*')
     .eq('whatsapp_number', whatsappNumber)
     .order('created_at', { ascending: true })
     .limit(limit);
+  if (error) console.error('❌ getMessages failed:', error.message);
   return data || [];
 }
 
