@@ -13,6 +13,7 @@ import StaffManagementPage from './pages/admin/StaffManagementPage';
 import ExchangeRatesPage from './pages/admin/ExchangeRatesPage';
 import BankAccountsPage from './pages/admin/BankAccountsPage';
 import ActivityLogsPage from './pages/admin/ActivityLogsPage';
+import SettingsPage from './pages/admin/SettingsPage';
 import ChatPage from './pages/staff/ChatPage';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
@@ -64,6 +65,7 @@ function AppRoutes() {
           <Route path="logs" element={<ActivityLogsPage />} />
           <Route path="rates" element={<ExchangeRatesPage />} />
           <Route path="banks" element={<BankAccountsPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
 
         {/* Staff Routes */}

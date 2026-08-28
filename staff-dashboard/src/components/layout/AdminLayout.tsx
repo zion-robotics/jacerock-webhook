@@ -10,6 +10,7 @@ const pageTitles: Record<string, string> = {
   '/admin/logs': 'Activity Logs',
   '/admin/rates': 'Exchange Rates',
   '/admin/banks': 'Bank Accounts',
+  '/admin/settings': 'Settings',
 };
 
 export default function AdminLayout() {
