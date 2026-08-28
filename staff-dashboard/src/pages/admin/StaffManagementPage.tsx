@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
+import { createStaffAccount } from '../../services/api';
 import type { StaffUser } from '../../types';
 import {
   UserPlus, Trash2, ShieldOff, ShieldCheck,
@@ -52,32 +53,18 @@ export default function StaffManagementPage() {
 
     setActing(true);
     try {
-      // Create auth user
-      const { error: authError } = await supabase.auth.signUp({
-        email: form.email,
-        password: form.password,
-      });
-
-      if (authError) throw authError;
-
-      // Add to staff_users
-      const { error: staffError } = await supabase
-        .from('staff_users')
-        .insert({
-          full_name: form.full_name,
-          email: form.email,
-          role: form.role,
-          is_active: true,
-        });
-
-      if (staffError) throw staffError;
+      await createStaffAccount(form.full_name, form.email, form.password, form.role);
 
       toast.success(`Staff member ${form.full_name} added successfully`);
       setShowModal(false);
       setForm({ full_name: '', email: '', password: '', confirmPassword: '', role: 'AGENT' });
       fetchStaff();
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Failed to add staff');
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as any).response?.data?.error
+          : err instanceof Error ? err.message : 'Failed to add staff';
+      toast.error(message || 'Failed to add staff');
     } finally {
       setActing(false);
     }
