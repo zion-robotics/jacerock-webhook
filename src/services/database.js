@@ -282,13 +282,14 @@ async function getAllAuditLogs(limit = 100) {
 
 // ── MESSAGES ──────────────────────────────────────────────────────────────────
 
-async function saveMessage(whatsappNumber, direction, content, senderName = '', sentBy = 'BOT') {
+async function saveMessage(whatsappNumber, direction, content, senderName = '', sentBy = 'BOT', mediaUrl = null) {
   const { error } = await supabase.from('messages').insert({
     whatsapp_number: whatsappNumber,
     direction,
     content,
     sender_name: senderName,
     sent_by: sentBy,
+    media_url: mediaUrl,
   });
   if (error) {
     console.error('❌ saveMessage failed:', error.message);
@@ -306,6 +307,25 @@ async function getMessages(whatsappNumber, limit = 50) {
     .limit(limit);
   if (error) console.error('❌ getMessages failed:', error.message);
   return data || [];
+}
+
+// Upload downloaded WhatsApp media (image/document) to the "receipts" bucket
+// and return a permanent public URL.
+async function uploadMedia(buffer, mimeType, whatsappNumber) {
+  const ext = mimeType.split('/')[1] || 'jpg';
+  const fileName = `${whatsappNumber}_${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('receipts')
+    .upload(fileName, buffer, { contentType: mimeType, upsert: false });
+
+  if (uploadError) {
+    console.error('❌ uploadMedia failed:', uploadError.message);
+    return null;
+  }
+
+  const { data } = supabase.storage.from('receipts').getPublicUrl(fileName);
+  return data?.publicUrl || null;
 }
 
 module.exports = {
@@ -333,4 +353,5 @@ module.exports = {
   getAllAuditLogs,
   saveMessage,
   getMessages,
+  uploadMedia,
 };

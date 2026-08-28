@@ -14,6 +14,7 @@ interface Message {
   sender_name: string;
   sent_by: string;
   created_at: string;
+  media_url?: string | null;
 }
 
 export default function ChatPage() {
@@ -240,6 +241,15 @@ export default function ChatPage() {
                         ? 'bg-accent text-white rounded-br-sm'
                         : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'
                     }`}>
+                      {msg.media_url ? (
+                        <a href={msg.media_url} target="_blank" rel="noopener noreferrer">
+                          <img
+                            src={msg.media_url}
+                            alt="Uploaded receipt"
+                            className="rounded-lg max-w-full max-h-64 object-cover mb-1"
+                          />
+                        </a>
+                      ) : null}
                       <p className="whitespace-pre-wrap">{msg.content}</p>
                       <p className={`text-xs mt-1 ${
                         msg.direction === 'OUTBOUND' ? 'text-indigo-200' : 'text-slate-400'

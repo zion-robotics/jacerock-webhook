@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { handleMessage } = require('./src/handlers/conversation');
-const { sendTemplate, APPROVED_TEMPLATES } = require('./src/services/whatsapp');
+const { sendTemplate, APPROVED_TEMPLATES, downloadMedia } = require('./src/services/whatsapp');
 require('dotenv').config();
 
 const app = express();
@@ -65,7 +65,24 @@ app.post('/webhook', async (req, res) => {
         const replyText = buttonReply?.title || listReply?.title || '[button tap]';
         await db.saveMessage(from, 'INBOUND', replyText, senderName, 'CUSTOMER');
       } else if (message.type === 'image' || message.type === 'document') {
-        await db.saveMessage(from, 'INBOUND', `[${message.type} uploaded]`, senderName, 'CUSTOMER');
+        const mediaId = message[message.type]?.id;
+        let mediaUrl = null;
+
+        if (mediaId) {
+          const media = await downloadMedia(mediaId);
+          if (media) {
+            mediaUrl = await db.uploadMedia(media.buffer, media.mimeType, from);
+          }
+        }
+
+        await db.saveMessage(
+          from,
+          'INBOUND',
+          `[${message.type} uploaded]`,
+          senderName,
+          'CUSTOMER',
+          mediaUrl
+        );
       }
 
       await handleMessage(from, message, senderName);
