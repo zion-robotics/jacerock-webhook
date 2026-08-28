@@ -9,11 +9,6 @@ interface StatsCardProps {
   trend?: { value: number; label?: string };
 }
 
-// Only genuinely alarming states get a colored chip: red (rejected/failed),
-// amber (needs action). Everything else is neutral, since it's just data,
-// not something that needs to compete for attention.
-const alertColors: Record<string, boolean> = { red: true, amber: true };
-
 const chipColorMap = {
   teal: 'bg-slate-100 text-slate-500',
   blue: 'bg-slate-100 text-slate-500',
