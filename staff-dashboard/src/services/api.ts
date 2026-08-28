@@ -23,6 +23,17 @@ export async function pauseBot(whatsappNumber: string, staffName: string) {
   return data;
 }
 
+export async function createStaffAccount(
+  fullName: string,
+  email: string,
+  password: string,
+  role: 'AGENT' | 'ADMIN'
+)
+{
+  const { data } = await api.post('/admin/create-staff', { fullName, email, password, role });
+  return data;
+}
+
 export async function resumeBot(whatsappNumber: string, staffName: string) {
   const { data } = await api.post('/staff/resume-bot', { whatsappNumber, staffName });
   return data;
