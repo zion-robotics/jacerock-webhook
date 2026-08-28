@@ -15,6 +15,8 @@ import BankAccountsPage from './pages/admin/BankAccountsPage';
 import ActivityLogsPage from './pages/admin/ActivityLogsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import ChatPage from './pages/staff/ChatPage';
+import HotAlert from './components/alerts/HotAlert';
+import NotificationBanner from './components/alerts/NotificationBanner';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
@@ -56,7 +58,6 @@ function AppRoutes() {
             ? <Navigate to="/admin" replace />
             : <Navigate to="/queue" replace />
         } />
-
         {/* Admin Routes */}
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminLayout /></ProtectedRoute>}>
           <Route index element={<OverviewPage />} />
@@ -67,16 +68,20 @@ function AppRoutes() {
           <Route path="banks" element={<BankAccountsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
-
         {/* Staff Routes */}
         <Route path="/queue" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
           <Route index element={<QueuePage />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="transaction/:id" element={<TransactionDetailPage />} />
         </Route>
-
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      {user && (
+        <>
+          <HotAlert />
+          <NotificationBanner />
+        </>
+      )}
     </BrowserRouter>
   );
 }
