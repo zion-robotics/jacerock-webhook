@@ -54,11 +54,20 @@ app.post('/webhook', async (req, res) => {
       const senderName = contact?.profile?.name || 'Valued Customer';
 
       console.log(`📩 Message from ${from} | Type: ${message.type}`);
+
       // Save inbound message
       const db = require('./src/services/database');
       if (message.type === 'text') {
         await db.saveMessage(from, 'INBOUND', message.text?.body, senderName, 'CUSTOMER');
+      } else if (message.type === 'interactive') {
+        const buttonReply = message.interactive?.button_reply;
+        const listReply = message.interactive?.list_reply;
+        const replyText = buttonReply?.title || listReply?.title || '[button tap]';
+        await db.saveMessage(from, 'INBOUND', replyText, senderName, 'CUSTOMER');
+      } else if (message.type === 'image' || message.type === 'document') {
+        await db.saveMessage(from, 'INBOUND', `[${message.type} uploaded]`, senderName, 'CUSTOMER');
       }
+
       await handleMessage(from, message, senderName);
     }
 
