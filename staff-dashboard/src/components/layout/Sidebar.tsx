@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ListChecks, Users, Activity,
   TrendingUp, Landmark, LogOut, X, MessageSquare,
-  ChevronLeft, ChevronRight
+  ChevronLeft, ChevronRight, Shield
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { supabase } from '../../services/supabase';
