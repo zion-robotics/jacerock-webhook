@@ -1,6 +1,35 @@
 const wa = require('../services/whatsapp');
 const db = require('../services/database');
 
+// ── Wrap outbound sends so every message gets logged automatically ─────────
+const _sendText = wa.sendText;
+wa.sendText = async (to, text, ...rest) => {
+  const result = await _sendText(to, text, ...rest);
+  await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
+  return result;
+};
+
+const _sendButtons = wa.sendButtons;
+wa.sendButtons = async (to, text, buttons, ...rest) => {
+  const result = await _sendButtons(to, text, buttons, ...rest);
+  await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
+  return result;
+};
+
+const _sendList = wa.sendList;
+wa.sendList = async (to, text, buttonLabel, sections, ...rest) => {
+  const result = await _sendList(to, text, buttonLabel, sections, ...rest);
+  await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
+  return result;
+};
+
+const _sendTemplate = wa.sendTemplate;
+wa.sendTemplate = async (to, templateName, variables, ...rest) => {
+  const result = await _sendTemplate(to, templateName, variables, ...rest);
+  await db.saveMessage(to, 'OUTBOUND', `[Template: ${templateName}]`, '', 'BOT');
+  return result;
+};
+
 const RESTART_KEYWORDS = ['cancel', 'restart', 'back', 'menu', 'start', 'home', 'stop'];
 const CANCEL_HINT = '\n\n_Type *cancel* at any time to return to the main menu._';
 

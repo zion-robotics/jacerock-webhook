@@ -280,6 +280,28 @@ async function getAllAuditLogs(limit = 100) {
   return data || [];
 }
 
+// ── MESSAGES ──────────────────────────────────────────────────────────────────
+
+async function saveMessage(whatsappNumber, direction, content, senderName = '', sentBy = 'BOT') {
+  await supabase.from('messages').insert({
+    whatsapp_number: whatsappNumber,
+    direction,
+    content,
+    sender_name: senderName,
+    sent_by: sentBy,
+  });
+}
+
+async function getMessages(whatsappNumber, limit = 50) {
+  const { data } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('whatsapp_number', whatsappNumber)
+    .order('created_at', { ascending: true })
+    .limit(limit);
+  return data || [];
+}
+
 module.exports = {
   getOrCreateCustomer,
   updateCustomerKYC,
@@ -303,4 +325,6 @@ module.exports = {
   logAudit,
   getAuditLogs,
   getAllAuditLogs,
+  saveMessage,
+  getMessages,
 };

@@ -1,10 +1,12 @@
 const express = require('express');
+const cors = require('cors');
 const { handleMessage } = require('./src/handlers/conversation');
 const { sendTemplate, APPROVED_TEMPLATES } = require('./src/services/whatsapp');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: '*' }));
 
 const PORT = process.env.PORT || 3000;
 const VERIFY_TOKEN = process.env.VERIFY_TOKEN;
@@ -52,6 +54,11 @@ app.post('/webhook', async (req, res) => {
       const senderName = contact?.profile?.name || 'Valued Customer';
 
       console.log(`📩 Message from ${from} | Type: ${message.type}`);
+      // Save inbound message
+      const db = require('./src/services/database');
+      if (message.type === 'text') {
+        await db.saveMessage(from, 'INBOUND', message.text?.body, senderName, 'CUSTOMER');
+      }
       await handleMessage(from, message, senderName);
     }
 
@@ -74,6 +81,7 @@ app.post('/staff/send-message', async (req, res) => {
   if (!result) return res.status(500).json({ error: 'Failed to send message' });
 
   const db = require('./src/services/database');
+  await db.saveMessage(to, 'OUTBOUND', message, staffName || 'STAFF', staffName || 'STAFF');
   await db.logAudit(null, null, 'STAFF_MESSAGE_SENT', null, null, staffName || 'STAFF', `Message sent to ${to}: ${message}`);
 
   return res.status(200).json({ status: 'sent', data: result });
