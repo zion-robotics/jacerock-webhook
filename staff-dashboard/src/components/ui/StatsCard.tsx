@@ -19,24 +19,23 @@ const chipColorMap = {
 
 export default function StatsCard({ title, value, subtitle, icon, color, trend }: StatsCardProps) {
   const isUp = trend ? trend.value >= 0 : true;
-
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{title}</p>
-        <span className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${chipColorMap[color]}`}>
+    <div className="bg-white rounded-2xl border border-slate-200 p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide min-w-0 truncate">{title}</p>
+        <span className={`w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${chipColorMap[color]}`}>
           {icon}
         </span>
       </div>
-      <p className="text-3xl font-bold text-slate-900 tracking-tight mt-3">{value}</p>
-      <div className="flex items-center gap-1.5 mt-2">
+      <p className="text-xl md:text-3xl font-bold text-slate-900 tracking-tight mt-3 truncate">{value}</p>
+      <div className="flex items-center gap-1.5 mt-2 min-w-0">
         {trend && (
-          <span className={`inline-flex items-center gap-0.5 text-xs font-semibold ${isUp ? 'text-teal-600' : 'text-red-500'}`}>
+          <span className={`inline-flex items-center gap-0.5 text-xs font-semibold flex-shrink-0 ${isUp ? 'text-teal-600' : 'text-red-500'}`}>
             {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
             {Math.abs(trend.value)}%
           </span>
         )}
-        {subtitle && <p className="text-xs text-slate-400">{subtitle}</p>}
+        {subtitle && <p className="text-xs text-slate-400 truncate">{subtitle}</p>}
       </div>
     </div>
   );
