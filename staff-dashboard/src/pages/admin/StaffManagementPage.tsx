@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
-import { createStaffAccount } from '../../services/api';
+import { createStaffAccount, resetStaffPassword } from '../../services/api';
 import type { StaffUser } from '../../types';
 import {
   UserPlus, Trash2, ShieldOff, ShieldCheck,
-  Eye, EyeOff, Users, X
+  Eye, EyeOff, Users, X, KeyRound
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -21,6 +21,11 @@ export default function StaffManagementPage() {
     confirmPassword: '',
     role: 'AGENT' as 'AGENT' | 'ADMIN',
   });
+
+  const [resetTarget, setResetTarget] = useState<StaffUser | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     fetchStaff();
@@ -67,6 +72,31 @@ export default function StaffManagementPage() {
       toast.error(message || 'Failed to add staff');
     } finally {
       setActing(false);
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resetTarget) return;
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+
+    setResetting(true);
+    try {
+      await resetStaffPassword(resetTarget.id, newPassword);
+      toast.success(`Password reset for ${resetTarget.full_name}`);
+      setResetTarget(null);
+      setNewPassword('');
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as any).response?.data?.error
+          : err instanceof Error ? err.message : 'Failed to reset password';
+      toast.error(message || 'Failed to reset password');
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -185,6 +215,13 @@ export default function StaffManagementPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => setResetTarget(member)}
+                    title="Reset password"
+                    className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => handleToggleActive(member)}
                     title={member.is_active ? 'Deactivate' : 'Reactivate'}
@@ -316,6 +353,71 @@ export default function StaffManagementPage() {
                   className="flex-1 bg-accent text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {acting ? 'Adding...' : 'Add Staff Member'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetTarget && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800">Reset Password</h3>
+              <button
+                onClick={() => { setResetTarget(null); setNewPassword(''); }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-500 mb-4">
+              Set a new password for <span className="font-medium text-slate-700">{resetTarget.full_name}</span>
+            </p>
+
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showResetPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    required
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent pr-10"
+                    placeholder="Minimum 8 characters"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                  >
+                    {showResetPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+                Share the new password with the staff member directly via WhatsApp or your preferred channel.
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setResetTarget(null); setNewPassword(''); }}
+                  className="flex-1 border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetting}
+                  className="flex-1 bg-accent text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {resetting ? 'Resetting...' : 'Reset Password'}
                 </button>
               </div>
             </form>
