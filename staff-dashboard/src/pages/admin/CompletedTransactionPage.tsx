@@ -220,7 +220,7 @@ export default function CompletedTransactionPage() {
                 <ZoomIn className="w-3 h-3" />
                 Zoom In
               </button>
-              
+              <a
                 href={tx.receipt_url}
                 target="_blank"
                 rel="noreferrer"
