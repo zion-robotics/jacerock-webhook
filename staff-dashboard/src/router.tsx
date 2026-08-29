@@ -17,6 +17,7 @@ import SettingsPage from './pages/admin/SettingsPage';
 import ChatPage from './pages/staff/ChatPage';
 import TransactionHistoryPage from './pages/admin/TransactionHistoryPage';
 import CompletedTransactionPage from './pages/admin/CompletedTransactionPage';
+import MyActivityPage from './pages/staff/MyActivityPage';
 import HotAlert from './components/alerts/HotAlert';
 import NotificationBanner from './components/alerts/NotificationBanner';
 
@@ -79,6 +80,7 @@ function AppRoutes() {
           <Route path="transaction/:id" element={<TransactionDetailPage />} />
           <Route path="history" element={<TransactionHistoryPage />} />
           <Route path="history/:id" element={<CompletedTransactionPage />} />
+          <Route path="activity" element={<MyActivityPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
