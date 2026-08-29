@@ -177,9 +177,11 @@ app.post('/admin/create-staff', async (req, res) => {
     });
     if (authError) throw authError;
 
+    // Use the SAME id as the auth user so staff_users and Supabase Auth stay linked
     const { error: staffError } = await supabaseAdmin
       .from('staff_users')
       .insert({
+        id: authData.user.id,
         full_name: fullName,
         email,
         role,
@@ -191,6 +193,31 @@ app.post('/admin/create-staff', async (req, res) => {
   } catch (err) {
     console.error('❌ create-staff error:', err.message);
     return res.status(500).json({ error: err.message || 'Failed to create staff account' });
+  }
+});
+
+// ── Admin: Reset Staff Password (server-side, service role only) ─────────────
+app.post('/admin/reset-password', async (req, res) => {
+  const { staffId, newPassword } = req.body;
+  if (!staffId || !newPassword) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: 'Password must be at least 8 characters' });
+  }
+
+  const supabaseAdmin = require('./src/config/supabaseAdmin');
+
+  try {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(staffId, {
+      password: newPassword,
+    });
+    if (error) throw error;
+
+    return res.status(200).json({ status: 'reset' });
+  } catch (err) {
+    console.error('❌ reset-password error:', err.message);
+    return res.status(500).json({ error: err.message || 'Failed to reset password' });
   }
 });
 
