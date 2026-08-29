@@ -69,9 +69,10 @@ function AppRoutes() {
           <Route path="logs" element={<ActivityLogsPage />} />
           <Route path="rates" element={<ExchangeRatesPage />} />
           <Route path="banks" element={<BankAccountsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
           <Route path="history" element={<TransactionHistoryPage />} />
           <Route path="history/:id" element={<CompletedTransactionPage />} />
+          <Route path="chat" element={<ChatPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
         {/* Staff Routes */}
         <Route path="/queue" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
