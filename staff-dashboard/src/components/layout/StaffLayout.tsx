@@ -8,6 +8,7 @@ const pageTitles: Record<string, string> = {
   '/queue': 'Transaction Queue',
   '/queue/chat': 'Live Chat',
   '/queue/history': 'Transaction History',
+  '/queue/activity': 'My Activity',
 };
 
 function getTitle(pathname: string) {
