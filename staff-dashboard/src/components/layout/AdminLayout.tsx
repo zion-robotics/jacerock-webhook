@@ -11,6 +11,7 @@ const pageTitles: Record<string, string> = {
   '/admin/rates': 'Exchange Rates',
   '/admin/banks': 'Bank Accounts',
   '/admin/history': 'Transaction History',
+  '/admin/chat': 'Live Chat',
   '/admin/settings': 'Settings',
 };
 
