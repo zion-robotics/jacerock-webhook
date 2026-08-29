@@ -25,6 +25,33 @@ button, a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── Global mobile overflow safety net ── */
+
+/* Stop the whole page from ever scrolling sideways */
+html, body, #root {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Long unbroken text (references, numbers, emails) should wrap or clip
+   instead of forcing their container wider */
+* {
+  min-width: 0;
+}
+
+/* Tables can still be wider than their container — let them scroll
+   internally instead of blowing out the page */
+table {
+  min-width: 0;
+  table-layout: auto;
+}
+
+/* Images and media should never exceed their container */
+img, svg, video {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Prevent text size adjustment on orientation change */
 html {
   -webkit-text-size-adjust: 100%;
