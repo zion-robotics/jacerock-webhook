@@ -60,10 +60,10 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-full w-64 ${widthClass} bg-primary z-30 flex flex-col relative
-        transform transition-all duration-300
+        fixed top-0 left-0 h-full w-[82vw] max-w-[280px] ${widthClass} bg-primary z-30 flex flex-col relative shadow-2xl
+        transform transition-all duration-300 ease-out
         ${open ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:z-auto
+        lg:translate-x-0 lg:static lg:z-auto lg:shadow-none
       `}>
         {onToggleCollapse && (
           <button
