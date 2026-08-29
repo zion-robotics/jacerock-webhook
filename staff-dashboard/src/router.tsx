@@ -15,6 +15,8 @@ import BankAccountsPage from './pages/admin/BankAccountsPage';
 import ActivityLogsPage from './pages/admin/ActivityLogsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import ChatPage from './pages/staff/ChatPage';
+import TransactionHistoryPage from './pages/admin/TransactionHistoryPage';
+import CompletedTransactionPage from './pages/admin/CompletedTransactionPage';
 import HotAlert from './components/alerts/HotAlert';
 import NotificationBanner from './components/alerts/NotificationBanner';
 
@@ -67,13 +69,16 @@ function AppRoutes() {
           <Route path="rates" element={<ExchangeRatesPage />} />
           <Route path="banks" element={<BankAccountsPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="chat" element={<ChatPage />} />
+          <Route path="history" element={<TransactionHistoryPage />} />
+          <Route path="history/:id" element={<CompletedTransactionPage />} />
         </Route>
         {/* Staff Routes */}
         <Route path="/queue" element={<ProtectedRoute><StaffLayout /></ProtectedRoute>}>
           <Route index element={<QueuePage />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="transaction/:id" element={<TransactionDetailPage />} />
+          <Route path="history" element={<TransactionHistoryPage />} />
+          <Route path="history/:id" element={<CompletedTransactionPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
