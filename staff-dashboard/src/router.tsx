@@ -66,6 +66,7 @@ function AppRoutes() {
           <Route path="rates" element={<ExchangeRatesPage />} />
           <Route path="banks" element={<BankAccountsPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="chat" element={<ChatPage />} />
         </Route>
 
         {/* Staff Routes */}

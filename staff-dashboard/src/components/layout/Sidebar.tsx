@@ -21,6 +21,7 @@ const adminLinks = [
   { to: '/admin/rates', icon: TrendingUp, label: 'Exchange Rates' },
   { to: '/admin/banks', icon: Landmark, label: 'Bank Accounts' },
   { to: '/admin/settings', icon: Shield, label: 'Settings' },
+  { to: '/admin/chat', icon: MessageSquare, label: 'Live Chat' },
 ];
 
 const staffLinks = [
