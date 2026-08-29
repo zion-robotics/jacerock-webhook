@@ -9,8 +9,8 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router />
-      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       <InstallPWA />
+      <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
     </QueryClientProvider>
   );
 }

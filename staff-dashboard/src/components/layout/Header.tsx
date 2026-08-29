@@ -1,5 +1,7 @@
 import { Menu, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAlertStore } from '../../store/alertStore';
+import { useAuthStore } from '../../store/authStore';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -8,6 +10,13 @@ interface HeaderProps {
 
 export default function Header({ onMenuClick, title }: HeaderProps) {
   const { pendingCount } = useAlertStore();
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+  const isAdmin = user?.role === 'ADMIN';
+
+  function handleBellClick() {
+    navigate(isAdmin ? '/admin/transactions' : '/queue');
+  }
 
   return (
     <header className="bg-white border-b border-slate-200 shadow-sm px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-10">
@@ -21,9 +30,9 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
         </button>
         <h2 className="text-slate-800 font-semibold text-base md:text-lg">{title}</h2>
       </div>
-
       <div className="flex items-center gap-3">
         <button
+          onClick={handleBellClick}
           className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
           aria-label={pendingCount > 0 ? `${pendingCount} pending notifications` : 'Notifications'}
         >
