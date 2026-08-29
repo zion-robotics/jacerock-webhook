@@ -7,13 +7,21 @@ import BottomNav from './BottomNav';
 const pageTitles: Record<string, string> = {
   '/queue': 'Transaction Queue',
   '/queue/chat': 'Live Chat',
+  '/queue/history': 'Transaction History',
 };
+
+function getTitle(pathname: string) {
+  if (pageTitles[pathname]) return pageTitles[pathname];
+  if (pathname.startsWith('/queue/history/')) return 'Transaction Detail';
+  if (pathname.startsWith('/queue/transaction')) return 'Transaction Detail';
+  return 'Dashboard';
+}
 
 export default function StaffLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
-  const title = pageTitles[location.pathname] || 'Dashboard';
+  const title = getTitle(location.pathname);
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
