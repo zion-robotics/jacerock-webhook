@@ -38,3 +38,7 @@ export async function resumeBot(whatsappNumber: string, staffName: string) {
   const { data } = await api.post('/staff/resume-bot', { whatsappNumber, staffName });
   return data;
 }
+export async function resetStaffPassword(staffId: string, newPassword: string) {
+  const { data } = await api.post('/admin/reset-password', { staffId, newPassword });
+  return data;
+}
