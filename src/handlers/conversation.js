@@ -1,5 +1,6 @@
 const wa = require('../services/whatsapp');
 const db = require('../services/database');
+const { uploadReceiptToStorage } = require('../services/storage');
 
 // ── Wrap outbound sends so every message gets logged automatically ─────────
 const _sendText = wa.sendText;
@@ -251,9 +252,17 @@ async function handleMessage(from, message, senderName) {
       const { kycName, currencyPair, rate, amount, settlementAmount, paymentMethod } = sessionData;
       const customer = await db.getOrCreateCustomer(from, senderName);
       const transaction = await db.createTransaction(from, customer.id, kycName, currencyPair, parseFloat(rate));
+
+      const mediaId = message.image?.id || message.document?.id;
+      let receiptUrl = null;
+      if (mediaId) {
+        receiptUrl = await uploadReceiptToStorage(mediaId, process.env.WHATSAPP_TOKEN, transaction.reference);
+      }
+
       await db.updateTransaction(transaction.id, {
         amount, settlement_amount_ngn: settlementAmount, payment_method: paymentMethod,
         status: 'RECEIPT_UPLOADED', receipt_uploaded_at: new Date().toISOString(),
+        receipt_url: receiptUrl,
       });
       await db.setSession(from, 'AWAITING_SETTLEMENT', { ...sessionData, transactionId: transaction.id }, transaction.id);
       await wa.sendTemplate(from, 'payment_received', [kycName, transaction.reference]);
@@ -318,9 +327,18 @@ async function handleMessage(from, message, senderName) {
   if (step === 'AWAITING_RECEIPT') {
     const { transactionId, kycName } = sessionData;
     if (msgType === 'image' || msgType === 'document') {
-      await db.updateTransaction(transactionId, { status: 'RECEIPT_UPLOADED', receipt_uploaded_at: new Date().toISOString() });
-      await db.setSession(from, 'AWAITING_SETTLEMENT', sessionData, transactionId);
+      const mediaId = message.image?.id || message.document?.id;
       const transaction = await db.getTransactionById(transactionId);
+      let receiptUrl = null;
+      if (mediaId) {
+        receiptUrl = await uploadReceiptToStorage(mediaId, process.env.WHATSAPP_TOKEN, transaction.reference);
+      }
+      await db.updateTransaction(transactionId, {
+        status: 'RECEIPT_UPLOADED',
+        receipt_uploaded_at: new Date().toISOString(),
+        receipt_url: receiptUrl,
+      });
+      await db.setSession(from, 'AWAITING_SETTLEMENT', sessionData, transactionId);
       await wa.sendTemplate(from, 'payment_received', [kycName, transaction.reference]);
       await wa.sendText(from, `Please provide the Nigerian bank account details where you would like to receive your settlement.\n\nKindly reply with:\n\n*Account Name:*\n*Bank Name:*\n*Account Number:*${CANCEL_HINT}`);
     } else {
