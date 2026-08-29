@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { ListChecks, MessageSquare } from 'lucide-react';
+import { ListChecks, MessageSquare, History } from 'lucide-react';
 import { useAlertStore } from '../../store/alertStore';
 
 const staffLinks = [
   { to: '/queue', icon: ListChecks, label: 'Queue', end: true },
   { to: '/queue/chat', icon: MessageSquare, label: 'Chat' },
+  { to: '/queue/history', icon: History, label: 'History', end: true },
 ];
 
 export default function BottomNav() {
