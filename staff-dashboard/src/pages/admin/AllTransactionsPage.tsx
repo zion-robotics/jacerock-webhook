@@ -72,8 +72,8 @@ export default function AllTransactionsPage() {
     <div className="space-y-4">
       {/* Filters */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
             <input
               type="text"
@@ -83,12 +83,12 @@ export default function AllTransactionsPage() {
               className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
-          <div className="flex items-center gap-2 min-w-0 sm:w-auto">
-            <Filter className="w-4 h-4 text-slate-400 flex-shrink-0" />
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-slate-400" />
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="w-full sm:w-auto text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+              className="text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
             >
               {STATUS_FILTERS.map(f => (
                 <option key={f.value} value={f.value}>{f.label}</option>
@@ -97,7 +97,7 @@ export default function AllTransactionsPage() {
           </div>
           <button
             onClick={fetchTransactions}
-            className="flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+            className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh

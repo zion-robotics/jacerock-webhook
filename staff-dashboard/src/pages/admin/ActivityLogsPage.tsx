@@ -68,16 +68,16 @@ export default function ActivityLogsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
+      <div className="flex items-center justify-between">
+        <div>
           <h3 className="font-semibold text-slate-800">Activity Logs</h3>
-          <p className="text-sm text-slate-500 mt-0.5 break-words">
+          <p className="text-sm text-slate-500 mt-0.5">
             Complete audit trail of all actions across the platform
           </p>
         </div>
         <button
           onClick={exportCSV}
-          className="flex items-center justify-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 bg-white"
+          className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 bg-white"
         >
           <Download className="w-4 h-4" />
           Export CSV

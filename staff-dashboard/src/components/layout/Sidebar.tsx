@@ -60,7 +60,7 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
       )}
 
       <aside className={`
-        fixed top-0 left-0 h-full w-[82vw] max-w-64 ${widthClass} bg-primary z-30 flex flex-col relative
+        fixed top-0 left-0 h-full w-64 ${widthClass} bg-primary z-30 flex flex-col relative
         transform transition-all duration-300
         ${open ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto

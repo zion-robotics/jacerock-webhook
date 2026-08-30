@@ -73,10 +73,10 @@ export default function CompletedTransactionPage() {
   return (
     <div className="space-y-4 max-w-4xl">
       {/* Back */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(basePath)}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm self-start"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to History

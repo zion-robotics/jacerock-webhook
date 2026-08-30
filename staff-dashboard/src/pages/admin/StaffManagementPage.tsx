@@ -147,8 +147,8 @@ export default function StaffManagementPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3 min-w-0">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-3">
           <div className="p-2 bg-green-50 rounded-lg">
             <Users className="w-5 h-5 text-green-600" />
           </div>
