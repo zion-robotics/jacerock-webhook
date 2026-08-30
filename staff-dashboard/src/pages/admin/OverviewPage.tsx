@@ -114,7 +114,7 @@ export default function OverviewPage() {
   if (loading) {
     return (
       <div className="space-y-5 animate-pulse">
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-white rounded-2xl border border-slate-200 h-28" />
           ))}
@@ -126,7 +126,7 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
         <StatsCard
           title="Total Transactions"
           value={stats.total}
@@ -187,14 +187,14 @@ export default function OverviewPage() {
       )}
 
       {/* Weekly activity */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6">
           <div>
             <h3 className="font-semibold text-slate-800 text-sm">Weekly Activity</h3>
             <p className="text-xs text-slate-400 mt-0.5">Transactions per day, last 7 days</p>
           </div>
           {weeklyActivity[peakDayIndex]?.count > 0 && (
-            <span className="text-xs font-medium text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+            <span className="text-xs font-medium text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full self-start sm:self-auto">
               Peak: {weeklyActivity[peakDayIndex].day}
             </span>
           )}
@@ -225,8 +225,8 @@ export default function OverviewPage() {
       </div>
 
       {/* Recent transactions */}
-      <div className="bg-white rounded-2xl border border-slate-200">
-        <div className="px-6 py-5 border-b border-slate-100">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="px-4 sm:px-6 py-5 border-b border-slate-100">
           <h3 className="font-semibold text-slate-800 text-sm">Recent Transactions</h3>
         </div>
         <div className="overflow-x-auto">

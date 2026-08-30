@@ -74,16 +74,16 @@ export default function QueuePage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h3 className="font-semibold text-slate-800">Pending Transactions</h3>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 mt-0.5 break-words">
             {transactions.length} transaction{transactions.length !== 1 ? 's' : ''} awaiting review
           </p>
         </div>
         <button
           onClick={fetchQueue}
-          className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white"
+          className="flex items-center justify-center gap-2 text-sm text-slate-500 hover:text-slate-700 px-3 py-2 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors bg-white"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh

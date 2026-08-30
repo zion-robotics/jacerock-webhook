@@ -99,16 +99,16 @@ export default function TransactionHistoryPage() {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <h3 className="font-semibold text-slate-800">Transaction History</h3>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <p className="text-sm text-slate-500 mt-0.5 break-words">
             {completedCount} completed · {formatNGN(totalVolume)} total volume
           </p>
         </div>
         <button
           onClick={exportCSV}
-          className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 bg-white"
+          className="flex items-center justify-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 bg-white"
         >
           <Download className="w-4 h-4" />
           Export CSV

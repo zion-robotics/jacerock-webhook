@@ -138,9 +138,9 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-120px)] gap-4">
+    <div className="flex flex-col gap-4 h-[calc(100vh-120px)] lg:flex-row">
       {/* Session list */}
-      <div className="w-72 bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden flex-shrink-0">
+      <div className="w-full lg:w-72 bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden flex-shrink-0">
         <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-accent" />
@@ -165,11 +165,11 @@ export default function ChatPage() {
                   selected?.id === session.id ? 'bg-accent/5 border-l-2 border-accent' : ''
                 }`}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 min-w-0">
                   <div className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <Phone className="w-3.5 h-3.5 text-slate-500" />
                   </div>
-                  <p className="text-xs font-mono text-slate-700 truncate flex-1">{session.whatsapp_number}</p>
+                  <p className="text-xs font-mono text-slate-700 truncate flex-1 min-w-0">{session.whatsapp_number}</p>
                   {session.bot_paused && (
                     <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" title="Bot paused" />
                   )}
