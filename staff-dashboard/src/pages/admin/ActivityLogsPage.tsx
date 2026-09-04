@@ -67,9 +67,9 @@ export default function ActivityLogsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-4 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="font-semibold text-slate-800">Activity Logs</h3>
           <p className="text-sm text-slate-500 mt-0.5">
             Complete audit trail of all actions across the platform
@@ -77,7 +77,7 @@ export default function ActivityLogsPage() {
         </div>
         <button
           onClick={exportCSV}
-          className="flex items-center gap-2 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 bg-white"
+          className="flex items-center justify-center gap-2 border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-50 bg-white flex-shrink-0"
         >
           <Download className="w-4 h-4" />
           Export CSV
@@ -87,13 +87,13 @@ export default function ActivityLogsPage() {
       {/* Search */}
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search by action, staff name or notes..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
       </div>
@@ -102,7 +102,7 @@ export default function ActivityLogsPage() {
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-5 py-3 border-b border-slate-100">
           <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-            <Activity className="w-4 h-4 text-accent" />
+            <Activity className="w-4 h-4 text-accent flex-shrink-0" />
             {filtered.length} log entries
           </h3>
         </div>
@@ -117,27 +117,29 @@ export default function ActivityLogsPage() {
         ) : (
           <div className="divide-y divide-slate-50 max-h-[600px] overflow-y-auto">
             {filtered.map(log => (
-              <div key={log.id} className="px-5 py-3 flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${actionColor(log.action)}`}>
-                      {log.action.replace(/_/g, ' ')}
-                    </span>
-                    <span className="text-xs text-slate-500 font-medium">{log.performed_by}</span>
+              <div key={log.id} className="px-4 md:px-5 py-3 flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 min-w-0">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="w-1.5 h-1.5 rounded-full bg-accent mt-2 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${actionColor(log.action)}`}>
+                        {log.action.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-xs text-slate-500 font-medium truncate">{log.performed_by}</span>
+                    </div>
+                    {log.notes && (
+                      <p className="text-xs text-slate-500 mt-1 break-words">{log.notes}</p>
+                    )}
+                    {(log.old_status || log.new_status) && (
+                      <p className="text-xs text-slate-400 mt-0.5 break-words">
+                        {log.old_status && <span>{log.old_status.replace(/_/g, ' ')}</span>}
+                        {log.old_status && log.new_status && <span className="mx-1">→</span>}
+                        {log.new_status && <span className="font-medium">{log.new_status.replace(/_/g, ' ')}</span>}
+                      </p>
+                    )}
                   </div>
-                  {log.notes && (
-                    <p className="text-xs text-slate-500 mt-1">{log.notes}</p>
-                  )}
-                  {(log.old_status || log.new_status) && (
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {log.old_status && <span>{log.old_status.replace(/_/g, ' ')}</span>}
-                      {log.old_status && log.new_status && <span className="mx-1">→</span>}
-                      {log.new_status && <span className="font-medium">{log.new_status.replace(/_/g, ' ')}</span>}
-                    </p>
-                  )}
                 </div>
-                <span className="text-xs text-slate-400 flex-shrink-0">
+                <span className="text-xs text-slate-400 flex-shrink-0 pl-4 sm:pl-0">
                   {new Date(log.created_at).toLocaleString()}
                 </span>
               </div>
