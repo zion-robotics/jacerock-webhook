@@ -49,26 +49,26 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-2xl min-w-0">
 
       {/* Account info */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 md:p-6 min-w-0">
         <h3 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-          <User className="w-4 h-4 text-accent" />
+          <User className="w-4 h-4 text-accent flex-shrink-0" />
           Account Information
         </h3>
         <div className="space-y-3">
-          <div className="flex justify-between items-center py-2 border-b border-slate-50">
-            <span className="text-sm text-slate-500">Full Name</span>
-            <span className="text-sm font-medium text-slate-800">{user?.full_name}</span>
+          <div className="flex justify-between items-center gap-2 py-2 border-b border-slate-50 min-w-0">
+            <span className="text-sm text-slate-500 flex-shrink-0">Full Name</span>
+            <span className="text-sm font-medium text-slate-800 truncate text-right">{user?.full_name}</span>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-slate-50">
-            <span className="text-sm text-slate-500">Email Address</span>
-            <span className="text-sm font-medium text-slate-800">{user?.email}</span>
+          <div className="flex justify-between items-center gap-2 py-2 border-b border-slate-50 min-w-0">
+            <span className="text-sm text-slate-500 flex-shrink-0">Email Address</span>
+            <span className="text-sm font-medium text-slate-800 truncate text-right">{user?.email}</span>
           </div>
-          <div className="flex justify-between items-center py-2">
-            <span className="text-sm text-slate-500">Role</span>
-            <span className="text-sm font-semibold text-accent bg-accent/10 px-3 py-0.5 rounded-full">
+          <div className="flex justify-between items-center gap-2 py-2 min-w-0">
+            <span className="text-sm text-slate-500 flex-shrink-0">Role</span>
+            <span className="text-sm font-semibold text-accent bg-accent/10 px-3 py-0.5 rounded-full flex-shrink-0">
               Admin
             </span>
           </div>
@@ -76,9 +76,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Change Password */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 md:p-6 min-w-0">
         <h3 className="font-semibold text-slate-800 mb-1 flex items-center gap-2">
-          <Lock className="w-4 h-4 text-accent" />
+          <Lock className="w-4 h-4 text-accent flex-shrink-0" />
           Change Password
         </h3>
         <p className="text-sm text-slate-500 mb-4">
@@ -101,7 +101,7 @@ export default function SettingsPage() {
               <button
                 type="button"
                 onClick={() => setShowPasswords(!showPasswords)}
-                className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
               >
                 {showPasswords ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -124,7 +124,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="flex items-center gap-2 bg-accent text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-accent text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 w-full sm:w-auto"
           >
             <Lock className="w-4 h-4" />
             {saving ? 'Updating...' : 'Update Password'}
@@ -133,9 +133,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Security Info */}
-      <div className="bg-slate-50 rounded-xl border border-slate-200 p-5">
+      <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 md:p-5 min-w-0">
         <h3 className="font-semibold text-slate-700 mb-3 flex items-center gap-2 text-sm">
-          <Shield className="w-4 h-4 text-slate-500" />
+          <Shield className="w-4 h-4 text-slate-500 flex-shrink-0" />
           Security Notes
         </h3>
         <ul className="space-y-2 text-xs text-slate-500">
