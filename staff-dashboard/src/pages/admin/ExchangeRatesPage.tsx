@@ -79,9 +79,9 @@ export default function ExchangeRatesPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-4 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="font-semibold text-slate-800">Exchange Rates</h3>
           <p className="text-sm text-slate-500 mt-0.5">
             Changes take effect immediately in the WhatsApp bot
@@ -89,7 +89,7 @@ export default function ExchangeRatesPage() {
         </div>
         <button
           onClick={fetchRates}
-          className="flex items-center gap-2 text-sm text-slate-500 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 bg-white"
+          className="flex items-center justify-center gap-2 text-sm text-slate-500 border border-slate-200 px-3 py-2.5 rounded-lg hover:bg-slate-50 bg-white flex-shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -110,41 +110,37 @@ export default function ExchangeRatesPage() {
         ) : (
           <div className="divide-y divide-slate-50">
             {rates.map(rate => (
-              <div key={rate.id} className="px-5 py-4 flex items-center gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className="w-4 h-4 text-accent" />
-                    <span className="font-semibold text-slate-800 text-sm">
-                      {rate.currency_pair.replace('_', ' → ')}
+              <div key={rate.id} className="px-4 md:px-5 py-4 min-w-0">
+                <div className="flex items-center gap-2 mb-1 min-w-0">
+                  <TrendingUp className="w-4 h-4 text-accent flex-shrink-0" />
+                  <span className="font-semibold text-slate-800 text-sm truncate">
+                    {rate.currency_pair.replace('_', ' → ')}
+                  </span>
+                  {!rate.is_active && (
+                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
+                      Inactive
                     </span>
-                    {!rate.is_active && (
-                      <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">
-                        Inactive
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Last updated {timeAgo(rate.updated_at)}
-                    {rate.updated_by && ` by ${rate.updated_by}`}
-                  </p>
+                  )}
                 </div>
+                <p className="text-xs text-slate-400 mb-3 truncate">
+                  Last updated {timeAgo(rate.updated_at)}
+                  {rate.updated_by && ` by ${rate.updated_by}`}
+                </p>
 
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editing[rate.id] !== undefined ? editing[rate.id] : rate.rate}
-                      onChange={e => handleEdit(rate.id, e.target.value)}
-                      className="w-28 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
-                  </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editing[rate.id] !== undefined ? editing[rate.id] : rate.rate}
+                    onChange={e => handleEdit(rate.id, e.target.value)}
+                    className="w-28 flex-shrink-0 border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-right focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
 
                   {editing[rate.id] !== undefined && (
                     <button
                       onClick={() => handleSave(rate)}
                       disabled={saving === rate.id}
-                      className="flex items-center gap-1 bg-accent text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 bg-accent text-white px-3 py-2 rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 flex-shrink-0"
                     >
                       <Save className="w-3 h-3" />
                       {saving === rate.id ? 'Saving...' : 'Save'}
@@ -153,7 +149,7 @@ export default function ExchangeRatesPage() {
 
                   <button
                     onClick={() => handleToggleActive(rate)}
-                    className={`text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors ${
+                    className={`text-xs px-2.5 py-2 rounded-lg font-medium transition-colors flex-shrink-0 ${
                       rate.is_active
                         ? 'text-slate-500 border border-slate-200 hover:bg-slate-50'
                         : 'text-green-600 border border-green-200 hover:bg-green-50'
