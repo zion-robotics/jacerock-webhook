@@ -64,9 +64,9 @@ export default function BankAccountsPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-4 min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h3 className="font-semibold text-slate-800">Bank Accounts</h3>
           <p className="text-sm text-slate-500 mt-0.5">
             Active accounts are shown to customers in the WhatsApp bot
@@ -74,7 +74,7 @@ export default function BankAccountsPage() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+          className="flex items-center justify-center gap-2 bg-accent text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors flex-shrink-0"
         >
           <Plus className="w-4 h-4" />
           Add Account
@@ -98,28 +98,30 @@ export default function BankAccountsPage() {
         ) : (
           <div className="divide-y divide-slate-50">
             {banks.map(bank => (
-              <div key={bank.id} className="px-5 py-4 flex items-center gap-4">
-                <div className="p-2 bg-slate-50 rounded-lg flex-shrink-0">
-                  <Landmark className="w-5 h-5 text-slate-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-800 text-sm">{bank.bank_name}</p>
-                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">
-                      {bank.currency} · {bank.country}
-                    </span>
-                    {!bank.is_active && (
-                      <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold">
-                        Inactive
-                      </span>
-                    )}
+              <div key={bank.id} className="px-4 md:px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <div className="p-2 bg-slate-50 rounded-lg flex-shrink-0">
+                    <Landmark className="w-5 h-5 text-slate-500" />
                   </div>
-                  <p className="text-xs text-slate-600 mt-0.5">{bank.account_name}</p>
-                  <p className="text-xs font-mono text-slate-400 mt-0.5">{bank.account_number}</p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-semibold text-slate-800 text-sm truncate">{bank.bank_name}</p>
+                      <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full flex-shrink-0">
+                        {bank.currency} · {bank.country}
+                      </span>
+                      {!bank.is_active && (
+                        <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-semibold flex-shrink-0">
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-600 mt-0.5 truncate">{bank.account_name}</p>
+                    <p className="text-xs font-mono text-slate-400 mt-0.5 truncate">{bank.account_number}</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => handleToggle(bank)}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                  className={`flex items-center justify-center gap-1.5 text-xs px-3 py-2 rounded-lg font-medium transition-colors flex-shrink-0 ${
                     bank.is_active
                       ? 'text-amber-600 border border-amber-200 hover:bg-amber-50'
                       : 'text-green-600 border border-green-200 hover:bg-green-50'
@@ -138,11 +140,11 @@ export default function BankAccountsPage() {
 
       {/* Add Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-800">Add Bank Account</h3>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
