@@ -53,7 +53,6 @@ export default function TransactionDetailPage() {
 
     if (txData) {
       setTx(txData);
-      // Check bot status
       const { data: session } = await supabase
         .from('conversation_sessions')
         .select('bot_paused')
@@ -213,12 +212,12 @@ export default function TransactionDetailPage() {
   }
 
   return (
-    <div className="space-y-4 max-w-4xl">
+    <div className="space-y-4 max-w-4xl min-w-0">
       {/* Back + header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 min-w-0">
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
@@ -227,9 +226,9 @@ export default function TransactionDetailPage() {
       </div>
 
       {/* Reference */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 min-w-0">
         <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Transaction Reference</p>
-        <p className="font-mono text-lg font-bold text-slate-800">{tx.reference}</p>
+        <p className="font-mono text-lg font-bold text-slate-800 break-all">{tx.reference}</p>
         <p className="text-xs text-slate-400 mt-1">
           Created {new Date(tx.created_at).toLocaleString()}
         </p>
@@ -237,64 +236,64 @@ export default function TransactionDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Customer Info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 min-w-0">
           <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-            <User className="w-4 h-4 text-accent" />
+            <User className="w-4 h-4 text-accent flex-shrink-0" />
             Customer Information
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500">KYC Name</span>
-              <span className="font-medium text-slate-800">{tx.kyc_name || '—'}</span>
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">KYC Name</span>
+              <span className="font-medium text-slate-800 truncate text-right">{tx.kyc_name || '—'}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-slate-500">WhatsApp</span>
-              <span className="font-medium text-slate-800 flex items-center gap-1">
-                <Phone className="w-3 h-3" />
-                {tx.whatsapp_number}
+            <div className="flex justify-between items-center gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">WhatsApp</span>
+              <span className="font-medium text-slate-800 flex items-center gap-1 truncate">
+                <Phone className="w-3 h-3 flex-shrink-0" />
+                <span className="truncate">{tx.whatsapp_number}</span>
               </span>
             </div>
           </div>
         </div>
 
         {/* Transaction Info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 space-y-3 min-w-0">
           <h3 className="font-semibold text-slate-800 text-sm flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-accent" />
+            <CreditCard className="w-4 h-4 text-accent flex-shrink-0" />
             Transaction Details
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Currency Pair</span>
-              <span className="font-medium text-slate-800">{tx.currency_pair?.replace('_', ' → ')}</span>
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">Currency Pair</span>
+              <span className="font-medium text-slate-800 truncate text-right">{tx.currency_pair?.replace('_', ' → ')}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Amount</span>
-              <span className="font-medium text-slate-800">{tx.amount ? `${tx.amount} ${tx.from_currency}` : '—'}</span>
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">Amount</span>
+              <span className="font-medium text-slate-800 truncate text-right">{tx.amount ? `${tx.amount} ${tx.from_currency}` : '—'}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Rate</span>
-              <span className="font-medium text-slate-800">{tx.exchange_rate || '—'}</span>
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">Rate</span>
+              <span className="font-medium text-slate-800 truncate text-right">{tx.exchange_rate || '—'}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Settlement (NGN)</span>
-              <span className="font-bold text-green-600">
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">Settlement (NGN)</span>
+              <span className="font-bold text-green-600 truncate text-right">
                 {tx.settlement_amount_ngn
                   ? `₦${Number(tx.settlement_amount_ngn).toLocaleString()}`
                   : '—'}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Payment Method</span>
-              <span className="font-medium text-slate-800">{tx.payment_method?.replace('_', ' ') || '—'}</span>
+            <div className="flex justify-between gap-2 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">Payment Method</span>
+              <span className="font-medium text-slate-800 truncate text-right">{tx.payment_method?.replace('_', ' ') || '—'}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Receipt */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
-        <h3 className="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 min-w-0">
+        <h3 className="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2 flex-wrap">
           Payment Receipt
           {tx.receipt_url ? (
             <span className="text-xs text-green-600 font-normal">✓ Uploaded</span>
@@ -304,31 +303,43 @@ export default function TransactionDetailPage() {
         </h3>
         {tx.receipt_url ? (
           <div className="space-y-3">
+            {receiptZoomed && (
+              <div
+                className="fixed inset-4 z-50 bg-black flex items-center justify-center rounded-lg"
+                onClick={() => setReceiptZoomed(false)}
+              >
+                <img
+                  src={tx.receipt_url}
+                  alt="Payment receipt"
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+            )}
             <div
-              className={`relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 cursor-pointer transition-all ${receiptZoomed ? 'fixed inset-4 z-50 bg-black flex items-center justify-center' : 'max-h-64'}`}
-              onClick={() => setReceiptZoomed(!receiptZoomed)}
+              className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50 max-h-64 cursor-pointer"
+              onClick={() => setReceiptZoomed(true)}
             >
               <img
                 src={tx.receipt_url}
                 alt="Payment receipt"
-                className={`w-full object-contain ${receiptZoomed ? 'max-h-screen' : 'max-h-64'}`}
+                className="w-full object-contain max-h-64"
               />
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setReceiptZoomed(!receiptZoomed)}
-                className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50"
+                className="flex items-center justify-center gap-1.5 flex-1 sm:flex-none text-xs text-slate-600 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50"
               >
-                <ZoomIn className="w-3 h-3" />
+                <ZoomIn className="w-3.5 h-3.5" />
                 {receiptZoomed ? 'Close' : 'Zoom In'}
               </button>
-              <a
+              
                 href={tx.receipt_url}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-1.5 text-xs text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50"
+                className="flex items-center justify-center gap-1.5 flex-1 sm:flex-none text-xs text-slate-600 border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50"
               >
-                <Download className="w-3 h-3" />
+                <Download className="w-3.5 h-3.5" />
                 Download
               </a>
             </div>
@@ -341,23 +352,23 @@ export default function TransactionDetailPage() {
       </div>
 
       {/* Settlement Account */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 min-w-0">
         <h3 className="font-semibold text-slate-800 text-sm mb-3">Settlement Account (NGN)</h3>
         {tx.settlement_account_name ? (
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Account Details</span>
-              <span className="font-medium text-slate-800 text-right">{tx.settlement_account_name}</span>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1 min-w-0">
+              <span className="text-slate-500 flex-shrink-0">Account Details</span>
+              <span className="font-medium text-slate-800 break-words sm:text-right">{tx.settlement_account_name}</span>
             </div>
             <div className="flex items-center gap-2 mt-2">
               {kycMatch() ? (
                 <div className="flex items-center gap-1.5 text-green-600 text-xs font-medium">
-                  <CheckCircle className="w-4 h-4" />
+                  <CheckCircle className="w-4 h-4 flex-shrink-0" />
                   KYC name appears to match
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 text-amber-600 text-xs font-medium">
-                  <AlertTriangle className="w-4 h-4" />
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                   Verify KYC name against receipt manually
                 </div>
               )}
@@ -372,13 +383,13 @@ export default function TransactionDetailPage() {
       {(tx.status === 'AWAITING_STAFF_APPROVAL' || tx.status === 'PAYMENT_VERIFIED' || tx.status === 'UNDER_REVIEW') && (
         <div className="bg-white rounded-xl border border-slate-200 p-4">
           <h3 className="font-semibold text-slate-800 text-sm mb-3">Actions</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2">
             {tx.status === 'AWAITING_STAFF_APPROVAL' && (
               <>
                 <button
                   onClick={handleApprove}
                   disabled={acting}
-                  className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
                 >
                   <CheckCircle className="w-4 h-4" />
                   Approve Payment
@@ -386,7 +397,7 @@ export default function TransactionDetailPage() {
                 <button
                   onClick={() => setShowRejectModal(true)}
                   disabled={acting}
-                  className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
                   <XCircle className="w-4 h-4" />
                   Reject
@@ -394,7 +405,7 @@ export default function TransactionDetailPage() {
                 <button
                   onClick={handleHold}
                   disabled={acting}
-                  className="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 bg-amber-500 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
                 >
                   <Clock className="w-4 h-4" />
                   Hold
@@ -405,7 +416,7 @@ export default function TransactionDetailPage() {
               <button
                 onClick={handleComplete}
                 disabled={acting}
-                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+                className="flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
                 Mark as Completed
@@ -416,16 +427,16 @@ export default function TransactionDetailPage() {
       )}
 
       {/* Send Template */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 min-w-0">
         <h3 className="font-semibold text-slate-800 text-sm mb-3 flex items-center gap-2">
-          <Send className="w-4 h-4 text-accent" />
+          <Send className="w-4 h-4 text-accent flex-shrink-0" />
           Send Template to Customer
         </h3>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <select
             value={selectedTemplate}
             onChange={e => setSelectedTemplate(e.target.value)}
-            className="flex-1 text-sm border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-accent"
+            className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-accent"
           >
             {TEMPLATES.map(t => (
               <option key={t.value} value={t.value}>{t.label}</option>
@@ -433,7 +444,7 @@ export default function TransactionDetailPage() {
           </select>
           <button
             onClick={handleSendTemplate}
-            className="flex items-center gap-2 bg-accent text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+            className="flex items-center justify-center gap-2 bg-accent text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors flex-shrink-0"
           >
             <Send className="w-4 h-4" />
             Send
@@ -442,9 +453,9 @@ export default function TransactionDetailPage() {
       </div>
 
       {/* Human Takeover */}
-      <div className="bg-white rounded-xl border border-slate-200 p-4">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 min-w-0">
         <h3 className="font-semibold text-slate-800 text-sm mb-1 flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-accent" />
+          <MessageSquare className="w-4 h-4 text-accent flex-shrink-0" />
           Conversation Control
         </h3>
         <p className="text-xs text-slate-500 mb-3">
@@ -454,7 +465,7 @@ export default function TransactionDetailPage() {
         </p>
         <button
           onClick={handleToggleBot}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-colors w-full sm:w-auto ${
             botPaused
               ? 'bg-green-600 text-white hover:bg-green-700'
               : 'bg-slate-800 text-white hover:bg-slate-900'
@@ -467,16 +478,16 @@ export default function TransactionDetailPage() {
 
       {/* Audit Trail */}
       {logs.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 min-w-0">
           <h3 className="font-semibold text-slate-800 text-sm mb-3">Audit Trail</h3>
           <div className="space-y-2">
             {logs.map(log => (
-              <div key={log.id} className="flex items-start gap-3 text-xs">
+              <div key={log.id} className="flex items-start gap-3 text-xs min-w-0">
                 <div className="w-1.5 h-1.5 rounded-full bg-accent mt-1.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <span className="font-medium text-slate-700">{log.action.replace(/_/g, ' ')}</span>
-                  {log.notes && <span className="text-slate-500"> — {log.notes}</span>}
-                  <div className="text-slate-400 mt-0.5">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium text-slate-700 break-words">{log.action.replace(/_/g, ' ')}</span>
+                  {log.notes && <span className="text-slate-500 break-words"> — {log.notes}</span>}
+                  <div className="text-slate-400 mt-0.5 truncate">
                     {log.performed_by} · {new Date(log.created_at).toLocaleString()}
                   </div>
                 </div>
@@ -488,8 +499,8 @@ export default function TransactionDetailPage() {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md shadow-xl">
             <h3 className="font-semibold text-slate-800 mb-2">Reject Transaction</h3>
             <p className="text-sm text-slate-500 mb-4">
               Please provide a reason for rejection. The customer will be notified.
@@ -503,14 +514,14 @@ export default function TransactionDetailPage() {
             <div className="flex gap-3 mt-4">
               <button
                 onClick={() => setShowRejectModal(false)}
-                className="flex-1 border border-slate-200 text-slate-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50"
+                className="flex-1 border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReject}
                 disabled={!rejectReason || acting}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
+                className="flex-1 bg-red-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-red-700 disabled:opacity-50"
               >
                 Confirm Reject
               </button>
