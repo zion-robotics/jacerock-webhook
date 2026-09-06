@@ -244,8 +244,8 @@ async function handleMessage(from, message, senderName) {
     await wa.sendButtons(from,
       `You have selected:\n\n*${pairLabel}*\nCurrent rate: *${rateData.rate}* ${toCurrency} per ${fromCurrency}\n\nHow would you like to enter the amount?`,
       [
-        { id: 'DIR_FROM', title: `I have ${fromCurrency} to send` },
-        { id: 'DIR_TO', title: `They get ${toCurrency}` },
+        { id: 'DIR_FROM', title: `I'm sending (${fromCurrency})` },
+        { id: 'DIR_TO', title: `They receive (${toCurrency})` },
       ]
     );
     return;
@@ -263,8 +263,8 @@ async function handleMessage(from, message, senderName) {
     } else {
       await wa.sendButtons(from, `Please select an option:`,
         [
-          { id: 'DIR_FROM', title: `I have ${fromCurrency} to send` },
-          { id: 'DIR_TO', title: `I want them to get ${toCurrency}` },
+          { id: 'DIR_FROM', title: `I'm sending (${fromCurrency})` },
+          { id: 'DIR_TO', title: `They receive (${toCurrency})` },
         ]
       );
     }
@@ -283,9 +283,11 @@ async function handleMessage(from, message, senderName) {
 
     let amount, settlementAmount;
     if (amountDirection === 'TO') {
+      // They told us how much the recipient should receive — work backward
       settlementAmount = enteredAmount.toFixed(2);
       amount = (enteredAmount / rateNum).toFixed(2);
     } else {
+      // Default / FROM — they told us how much they're sending
       amount = enteredAmount;
       settlementAmount = (enteredAmount * rateNum).toFixed(2);
     }
