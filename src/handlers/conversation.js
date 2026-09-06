@@ -63,6 +63,34 @@ async function showMainMenu(to) {
   );
 }
 
+async function showMainMenuReturning(to, name) {
+  await wa.sendButtons(
+    to,
+    `Welcome back, ${name}! 👋\n\nGreat to see you again at Jacerock Capital Limited / AfrikBerry.\n\nHow can we assist you today?`,
+    [
+      { id: 'EXCHANGE_RATES', title: '📊 Exchange Rates' },
+      { id: 'CUSTOMER_CARE', title: '👩🏾‍💼 Customer Care' },
+    ]
+  );
+}
+
+async function showCurrencyPairList(to) {
+  await wa.sendList(to,
+    `Please select the currency pair you wish to transact:${CANCEL_HINT}`,
+    'Select Currency Pair',
+    [{ title: 'Available Currency Pairs', rows: [
+      { id: 'GMD_NGN', title: '🇬🇲 GMD → NGN' },
+      { id: 'NGN_GMD', title: '🇳🇬 NGN → GMD' },
+      { id: 'USD_GMD', title: '🇺🇸 USD → GMD' },
+      { id: 'EUR_GMD', title: '🇪🇺 EUR → GMD' },
+      { id: 'GBP_GMD', title: '🇬🇧 GBP → GMD' },
+      { id: 'CAD_GMD', title: '🇨🇦 CAD → GMD' },
+      { id: 'CFA_GMD', title: '🇨🇫 CEFA → GMD' },
+      { id: 'USDT_GMD', title: '💲 USDT → GMD' },
+    ]}]
+  );
+}
+
 async function handleMessage(from, message, senderName) {
   const blacklisted = await db.isBlacklisted(from);
   if (blacklisted) {
@@ -94,29 +122,52 @@ async function handleMessage(from, message, senderName) {
   // GLOBAL RESTART
   if (textBody && RESTART_KEYWORDS.includes(textBody.toLowerCase())) {
     await db.clearSession(from);
-    await showMainMenu(from);
+    const existing = await db.getOrCreateCustomer(from, senderName);
+    if (existing.kyc_status === 'COMPLETED' && existing.kyc_name) {
+      await db.setSession(from, 'MAIN_MENU', { customerId: existing.id, kycName: existing.kyc_name, isReturning: true });
+      await showMainMenuReturning(from, existing.kyc_name);
+    } else {
+      await db.setSession(from, 'MAIN_MENU', { customerId: existing.id });
+      await showMainMenu(from);
+    }
     return;
   }
 
   // WELCOME
   if (step === 'WELCOME') {
     const customer = await db.getOrCreateCustomer(from, senderName);
-    await db.setSession(from, 'MAIN_MENU', { customerId: customer.id });
-    await showMainMenu(from);
+
+    if (customer.kyc_status === 'COMPLETED' && customer.kyc_name) {
+      // Returning, already-verified customer
+      await db.setSession(from, 'MAIN_MENU', { customerId: customer.id, kycName: customer.kyc_name, isReturning: true });
+      await showMainMenuReturning(from, customer.kyc_name);
+    } else {
+      // New or not-yet-verified customer
+      await db.setSession(from, 'MAIN_MENU', { customerId: customer.id });
+      await showMainMenu(from);
+    }
     return;
   }
 
   // MAIN MENU
   if (step === 'MAIN_MENU') {
     if (replyId === 'EXCHANGE_RATES') {
-      await db.setSession(from, 'KYC_ASK', sessionData);
-      await wa.sendButtons(from,
-        `Hi,\n\nBefore we proceed, as part of our Know Your Customer (KYC) process, could you please provide your full name exactly as shown on your valid ID?\n\nDo you wish to proceed?`,
-        [
-          { id: 'KYC_YES', title: '✅ Yes, Proceed' },
-          { id: 'KYC_NO', title: '❌ No' },
-        ]
-      );
+      if (sessionData.isReturning && sessionData.kycName) {
+        // Skip KYC name-asking entirely — go straight to rates + currency selection
+        const rateText = await buildRateDisplay();
+        await wa.sendText(from, rateText);
+        await showCurrencyPairList(from);
+        await db.setSession(from, 'CURRENCY_SELECT', { ...sessionData, kycName: sessionData.kycName });
+      } else {
+        await db.setSession(from, 'KYC_ASK', sessionData);
+        await wa.sendButtons(from,
+          `Hi,\n\nBefore we proceed, as part of our Know Your Customer (KYC) process, could you please provide your full name exactly as shown on your valid ID?\n\nDo you wish to proceed?`,
+          [
+            { id: 'KYC_YES', title: '✅ Yes, Proceed' },
+            { id: 'KYC_NO', title: '❌ No' },
+          ]
+        );
+      }
     } else if (replyId === 'CUSTOMER_CARE') {
       await db.setSession(from, 'CUSTOMER_CARE', sessionData);
       await wa.sendList(from,
@@ -132,7 +183,11 @@ async function handleMessage(from, message, senderName) {
         ]}]
       );
     } else {
-      await showMainMenu(from);
+      if (sessionData.isReturning && sessionData.kycName) {
+        await showMainMenuReturning(from, sessionData.kycName);
+      } else {
+        await showMainMenu(from);
+      }
     }
     return;
   }
@@ -162,20 +217,7 @@ async function handleMessage(from, message, senderName) {
     await db.updateCustomerKYC(from, textBody);
     const rateText = await buildRateDisplay();
     await wa.sendText(from, rateText);
-    await wa.sendList(from,
-      `Please select the currency pair you wish to transact:${CANCEL_HINT}`,
-      'Select Currency Pair',
-      [{ title: 'Available Currency Pairs', rows: [
-        { id: 'GMD_NGN', title: '🇬🇲 GMD → NGN' },
-        { id: 'NGN_GMD', title: '🇳🇬 NGN → GMD' },
-        { id: 'USD_GMD', title: '🇺🇸 USD → GMD' },
-        { id: 'EUR_GMD', title: '🇪🇺 EUR → GMD' },
-        { id: 'GBP_GMD', title: '🇬🇧 GBP → GMD' },
-        { id: 'CAD_GMD', title: '🇨🇦 CAD → GMD' },
-        { id: 'CFA_GMD', title: '🇨🇫 CEFA → GMD' },
-        { id: 'USDT_GMD', title: '💲 USDT → GMD' },
-      ]}]
-    );
+    await showCurrencyPairList(from);
     await db.setSession(from, 'CURRENCY_SELECT', { ...sessionData, kycName: textBody });
     return;
   }
