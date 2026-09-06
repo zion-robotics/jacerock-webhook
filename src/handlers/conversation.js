@@ -138,11 +138,9 @@ async function handleMessage(from, message, senderName) {
     const customer = await db.getOrCreateCustomer(from, senderName);
 
     if (customer.kyc_status === 'COMPLETED' && customer.kyc_name) {
-      // Returning, already-verified customer
       await db.setSession(from, 'MAIN_MENU', { customerId: customer.id, kycName: customer.kyc_name, isReturning: true });
       await showMainMenuReturning(from, customer.kyc_name);
     } else {
-      // New or not-yet-verified customer
       await db.setSession(from, 'MAIN_MENU', { customerId: customer.id });
       await showMainMenu(from);
     }
@@ -153,7 +151,6 @@ async function handleMessage(from, message, senderName) {
   if (step === 'MAIN_MENU') {
     if (replyId === 'EXCHANGE_RATES') {
       if (sessionData.isReturning && sessionData.kycName) {
-        // Skip KYC name-asking entirely — go straight to rates + currency selection
         const rateText = await buildRateDisplay();
         await wa.sendText(from, rateText);
         await showCurrencyPairList(from);
@@ -234,24 +231,70 @@ async function handleMessage(from, message, senderName) {
       await wa.sendText(from, `Sorry, that currency pair is currently unavailable. Please try another or type *cancel* to return to the menu.`);
       return;
     }
+    const [fromCurrency, toCurrency] = replyId.split('_');
     const pairLabel = replyId.replace('_', ' → ');
-    await db.setSession(from, 'AMOUNT_INPUT', { ...sessionData, currencyPair: replyId, rate: rateData.rate, pairLabel, fromCurrency: rateData.from_currency });
-    await wa.sendText(from, `You have selected:\n\n*${pairLabel}*\nCurrent rate: *${rateData.rate}* per ${rateData.from_currency}\n\nPlease enter the amount you would like to exchange:${CANCEL_HINT}`);
+    await db.setSession(from, 'AMOUNT_DIRECTION', {
+      ...sessionData,
+      currencyPair: replyId,
+      rate: rateData.rate,
+      pairLabel,
+      fromCurrency,
+      toCurrency,
+    });
+    await wa.sendButtons(from,
+      `You have selected:\n\n*${pairLabel}*\nCurrent rate: *${rateData.rate}* ${toCurrency} per ${fromCurrency}\n\nHow would you like to enter the amount?`,
+      [
+        { id: 'DIR_FROM', title: `I'm sending (${fromCurrency})` },
+        { id: 'DIR_TO', title: `They receive (${toCurrency})` },
+      ]
+    );
+    return;
+  }
+
+  // AMOUNT DIRECTION
+  if (step === 'AMOUNT_DIRECTION') {
+    const { fromCurrency, toCurrency } = sessionData;
+    if (replyId === 'DIR_FROM') {
+      await db.setSession(from, 'AMOUNT_INPUT', { ...sessionData, amountDirection: 'FROM' });
+      await wa.sendText(from, `Please enter the amount in ${fromCurrency} you would like to send:${CANCEL_HINT}`);
+    } else if (replyId === 'DIR_TO') {
+      await db.setSession(from, 'AMOUNT_INPUT', { ...sessionData, amountDirection: 'TO' });
+      await wa.sendText(from, `Please enter the amount in ${toCurrency} you would like the recipient to receive:${CANCEL_HINT}`);
+    } else {
+      await wa.sendButtons(from, `Please select an option:`,
+        [
+          { id: 'DIR_FROM', title: `I'm sending (${fromCurrency})` },
+          { id: 'DIR_TO', title: `They receive (${toCurrency})` },
+        ]
+      );
+    }
     return;
   }
 
   // AMOUNT INPUT
   if (step === 'AMOUNT_INPUT') {
-    const amount = parseFloat(textBody);
-    if (!amount || isNaN(amount) || amount <= 0) {
+    const enteredAmount = parseFloat(textBody);
+    if (!enteredAmount || isNaN(enteredAmount) || enteredAmount <= 0) {
       await wa.sendText(from, `Please enter a valid amount (numbers only, e.g. 500):${CANCEL_HINT}`);
       return;
     }
-    const { rate, pairLabel, fromCurrency } = sessionData;
-    const settlementAmount = (amount * parseFloat(rate)).toFixed(2);
+    const { rate, pairLabel, fromCurrency, toCurrency, amountDirection } = sessionData;
+    const rateNum = parseFloat(rate);
+
+    let amount, settlementAmount;
+    if (amountDirection === 'TO') {
+      // They told us how much the recipient should receive — work backward
+      settlementAmount = enteredAmount.toFixed(2);
+      amount = (enteredAmount / rateNum).toFixed(2);
+    } else {
+      // Default / FROM — they told us how much they're sending
+      amount = enteredAmount;
+      settlementAmount = (enteredAmount * rateNum).toFixed(2);
+    }
+
     await db.setSession(from, 'PAYMENT_METHOD', { ...sessionData, amount, settlementAmount });
     await wa.sendButtons(from,
-      `Thank you.\n\n*Transaction Summary*\n\nExchange: ${pairLabel}\nAmount: ${amount} ${fromCurrency}\nRate: ${rate}\nYou will receive: *NGN ${Number(settlementAmount).toLocaleString()}*\n\n⚠️ Rates are subject to change until payment is confirmed.\n\nPlease select your preferred payment method:`,
+      `Thank you.\n\n*Transaction Summary*\n\nExchange: ${pairLabel}\nYou send: *${amount} ${fromCurrency}*\nRate: ${rate}\nRecipient receives: *${Number(settlementAmount).toLocaleString()} ${toCurrency}*\n\n⚠️ Rates are subject to change until payment is confirmed.\n\nPlease select your preferred payment method:`,
       [
         { id: 'BANK_TRANSFER', title: '🏦 Bank Transfer' },
         { id: 'CASH_DEPOSIT', title: '💵 Cash Deposit' },
