@@ -289,7 +289,7 @@ export default function OverviewPage() {
                     tickFormatter={v => `₦${(v / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value: number) => [formatNGN(value), 'Settled NGN']}
+                    formatter={(value) => [formatNGN(typeof value === 'number' ? value : 0), 'Settled NGN']}
                     labelStyle={{ fontSize: 11, color: '#0f172a' }}
                     contentStyle={{
                       border: '1px solid #e2e8f0',
@@ -332,7 +332,7 @@ export default function OverviewPage() {
                 allowDecimals={false}
               />
               <Tooltip
-                formatter={(value: number) => [value, 'Transactions']}
+                formatter={(value) => [typeof value === 'number' ? value : 0, 'Transactions']}
                 contentStyle={{
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
