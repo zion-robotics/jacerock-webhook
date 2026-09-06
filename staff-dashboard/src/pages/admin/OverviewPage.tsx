@@ -21,6 +21,17 @@ interface PairVolume {
   totalNGN: number;
 }
 
+const ALL_PAIRS: { key: string; fromCurrency: string }[] = [
+  { key: 'GMD_NGN', fromCurrency: 'GMD' },
+  { key: 'NGN_GMD', fromCurrency: 'NGN' },
+  { key: 'USD_GMD', fromCurrency: 'USD' },
+  { key: 'EUR_GMD', fromCurrency: 'EUR' },
+  { key: 'GBP_GMD', fromCurrency: 'GBP' },
+  { key: 'CAD_GMD', fromCurrency: 'CAD' },
+  { key: 'CFA_GMD', fromCurrency: 'CFA' },
+  { key: 'USDT_GMD', fromCurrency: 'USDT' },
+];
+
 export default function OverviewPage() {
   const [stats, setStats] = useState({
     total: 0,
@@ -82,12 +93,24 @@ export default function OverviewPage() {
       setPendingCount(pending);
       setRecentTransactions(transactions.slice(0, 8));
 
-      // Build currency pair volume breakdown
+      // Build currency pair volume breakdown — start with ALL supported pairs at zero,
+      // then fill in real activity where it exists
       const pairMap: Record<string, PairVolume> = {};
+      ALL_PAIRS.forEach(({ key, fromCurrency }) => {
+        pairMap[key] = {
+          pair: key.replace('_', ' → '),
+          transactions: 0,
+          totalSent: 0,
+          currency: fromCurrency,
+          totalNGN: 0,
+        };
+      });
+
       transactions.forEach(t => {
         if (!t.currency_pair || !t.amount) return;
         const key = t.currency_pair;
         if (!pairMap[key]) {
+          // Fallback in case a transaction uses a pair not in ALL_PAIRS
           pairMap[key] = {
             pair: key.replace('_', ' → '),
             transactions: 0,
@@ -100,7 +123,14 @@ export default function OverviewPage() {
         pairMap[key].totalSent += parseFloat(t.amount) || 0;
         pairMap[key].totalNGN += parseFloat(t.settlement_amount_ngn) || 0;
       });
-      setPairVolumes(Object.values(pairMap).sort((a, b) => b.transactions - a.transactions));
+
+      // Sort by activity first (most transactions), then alphabetically for zero-activity pairs
+      setPairVolumes(
+        Object.values(pairMap).sort((a, b) => {
+          if (b.transactions !== a.transactions) return b.transactions - a.transactions;
+          return a.pair.localeCompare(b.pair);
+        })
+      );
 
       // Build weekly data
       const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -138,6 +168,9 @@ export default function OverviewPage() {
   }
 
   const COLORS = ['#4f46e5', '#16a34a', '#d97706', '#dc2626', '#0891b2', '#7c3aed', '#db2777', '#059669'];
+
+  // Only show pairs with real activity in the chart, so the bars stay meaningful
+  const activePairVolumes = pairVolumes.filter(pv => pv.transactions > 0);
 
   if (loading) {
     return (
@@ -185,9 +218,9 @@ export default function OverviewPage() {
           color="red"
         />
         <StatsCard
-          title="Total Settled (NGN)"
+          title="Total Volume"
           value={formatNGN(stats.totalVolumeNGN)}
-          subtitle="Total NGN paid out to recipients"
+          subtitle="Combined value of all currencies, in NGN"
           icon={<TrendingUp className="w-5 h-5" />}
           color="teal"
         />
@@ -216,65 +249,65 @@ export default function OverviewPage() {
       )}
 
       {/* Currency pair volume breakdown */}
-      {pairVolumes.length > 0 && (
-        <div className="bg-white rounded-xl border border-slate-200 p-4 md:p-5 min-w-0">
-          <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
-            Volume by Currency Pair
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
-            {/* Table breakdown */}
-            <div className="overflow-x-auto min-w-0">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100">
-                    <th className="text-left text-xs font-semibold text-slate-400 uppercase py-2">Pair</th>
-                    <th className="text-right text-xs font-semibold text-slate-400 uppercase py-2">Txns</th>
-                    <th className="text-right text-xs font-semibold text-slate-400 uppercase py-2">Sent</th>
-                    <th className="text-right text-xs font-semibold text-slate-400 uppercase py-2">Settled (NGN)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {pairVolumes.map((pv, i) => (
-                    <tr key={pv.pair} className="hover:bg-slate-50">
-                      <td className="py-2.5 max-w-[100px]">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: COLORS[i % COLORS.length] }}
-                          />
-                          <span className="font-medium text-slate-700 text-xs truncate">{pv.pair}</span>
-                        </div>
-                      </td>
-                      <td className="py-2.5 text-right text-xs text-slate-600 whitespace-nowrap">{pv.transactions}</td>
-                      <td className="py-2.5 text-right text-xs font-mono text-slate-600 whitespace-nowrap">
-                        {pv.totalSent.toLocaleString()} {pv.currency}
-                      </td>
-                      <td className="py-2.5 text-right text-xs font-bold text-green-600 whitespace-nowrap">
-                        {formatNGN(pv.totalNGN)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-slate-200">
-                    <td className="py-2.5 text-xs font-bold text-slate-700">Total</td>
-                    <td className="py-2.5 text-right text-xs font-bold text-slate-700 whitespace-nowrap">
-                      {pairVolumes.reduce((s, p) => s + p.transactions, 0)}
+      <div className="bg-white rounded-xl border border-slate-200 p-4 md:p-5 min-w-0">
+        <h3 className="font-semibold text-slate-800 text-sm mb-4 flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-accent flex-shrink-0" />
+          Volume by Currency Pair
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 min-w-0">
+          {/* Table breakdown — shows all 8 supported pairs */}
+          <div className="overflow-x-auto min-w-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100">
+                  <th className="text-left text-xs font-semibold text-slate-400 uppercase py-2">Pair</th>
+                  <th className="text-right text-xs font-semibold text-slate-400 uppercase py-2">Txns</th>
+                  <th className="text-right text-xs font-semibold text-slate-400 uppercase py-2">Sent</th>
+                  <th className="text-right text-xs font-semibold text-slate-400 uppercase py-2">Settled (NGN)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {pairVolumes.map((pv, i) => (
+                  <tr key={pv.pair} className={`hover:bg-slate-50 ${pv.transactions === 0 ? 'opacity-50' : ''}`}>
+                    <td className="py-2.5 max-w-[100px]">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: pv.transactions > 0 ? COLORS[i % COLORS.length] : '#cbd5e1' }}
+                        />
+                        <span className="font-medium text-slate-700 text-xs truncate">{pv.pair}</span>
+                      </div>
                     </td>
-                    <td className="py-2.5 text-right text-xs text-slate-400">—</td>
-                    <td className="py-2.5 text-right text-xs font-bold text-green-600 whitespace-nowrap">
-                      {formatNGN(pairVolumes.reduce((s, p) => s + p.totalNGN, 0))}
+                    <td className="py-2.5 text-right text-xs text-slate-600 whitespace-nowrap">{pv.transactions}</td>
+                    <td className="py-2.5 text-right text-xs font-mono text-slate-600 whitespace-nowrap">
+                      {pv.transactions > 0 ? `${pv.totalSent.toLocaleString()} ${pv.currency}` : '—'}
+                    </td>
+                    <td className={`py-2.5 text-right text-xs font-bold whitespace-nowrap ${pv.transactions > 0 ? 'text-green-600' : 'text-slate-400'}`}>
+                      {formatNGN(pv.totalNGN)}
                     </td>
                   </tr>
-                </tfoot>
-              </table>
-            </div>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-200">
+                  <td className="py-2.5 text-xs font-bold text-slate-700">Total</td>
+                  <td className="py-2.5 text-right text-xs font-bold text-slate-700 whitespace-nowrap">
+                    {pairVolumes.reduce((s, p) => s + p.transactions, 0)}
+                  </td>
+                  <td className="py-2.5 text-right text-xs text-slate-400">—</td>
+                  <td className="py-2.5 text-right text-xs font-bold text-green-600 whitespace-nowrap">
+                    {formatNGN(pairVolumes.reduce((s, p) => s + p.totalNGN, 0))}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
 
-            {/* Bar chart */}
-            <div className="h-48 min-w-0">
+          {/* Bar chart — only shows pairs with real activity, to keep it readable */}
+          <div className="h-48 min-w-0">
+            {activePairVolumes.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={pairVolumes} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <BarChart data={activePairVolumes} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis
                     dataKey="pair"
@@ -289,7 +322,7 @@ export default function OverviewPage() {
                     tickFormatter={v => `₦${(v / 1000).toFixed(0)}k`}
                   />
                   <Tooltip
-                    formatter={(value) => [formatNGN(typeof value === 'number' ? value : 0), 'Settled NGN']}
+                    formatter={value => [formatNGN(Number(value ?? 0)), 'Settled NGN']}
                     labelStyle={{ fontSize: 11, color: '#0f172a' }}
                     contentStyle={{
                       border: '1px solid #e2e8f0',
@@ -298,16 +331,20 @@ export default function OverviewPage() {
                     }}
                   />
                   <Bar dataKey="totalNGN" radius={[4, 4, 0, 0]}>
-                    {pairVolumes.map((_, i) => (
+                    {activePairVolumes.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-sm text-slate-400">
+                No activity yet
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* Weekly activity chart */}
       <div className="bg-white rounded-xl border border-slate-200 p-4 md:p-5 min-w-0">
@@ -332,7 +369,7 @@ export default function OverviewPage() {
                 allowDecimals={false}
               />
               <Tooltip
-                formatter={(value) => [typeof value === 'number' ? value : 0, 'Transactions']}
+                formatter={value => [value ?? 0, 'Transactions']}
                 contentStyle={{
                   border: '1px solid #e2e8f0',
                   borderRadius: '8px',
