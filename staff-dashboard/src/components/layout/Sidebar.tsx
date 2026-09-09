@@ -77,10 +77,14 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
 
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           {collapsed ? (
-            <img src="/logo.png" alt="Jacerock" className="h-8 w-8 object-contain mx-auto" />
+            <img src="/logo.png" alt="Jacerock" className="h-10 w-10 object-contain mx-auto" />
           ) : (
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="Jacerock" className="h-10 w-auto object-contain" />
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Jacerock" className="h-10 w-10 object-contain flex-shrink-0" />
+              <div>
+                <h1 className="text-white font-bold text-lg leading-tight">Jacerock</h1>
+                <p className="text-slate-400 text-xs">AfrikBerry Dashboard</p>
+              </div>
             </div>
           )}
           <button
