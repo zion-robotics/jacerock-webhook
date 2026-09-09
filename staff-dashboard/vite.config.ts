@@ -8,7 +8,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       devOptions: { enabled: true },
-      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.ico', 'icon-192.jpg', 'icon-512.jpg', 'logo.png'],
       manifest: {
         name: 'Jacerock Staff Dashboard',
         short_name: 'Jacerock',
@@ -19,12 +19,12 @@ export default defineConfig({
         orientation: 'any',
         start_url: '/',
         icons: [
-          { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icon-192.jpg', sizes: '192x192', type: 'image/jpeg' },
+          { src: 'icon-512.jpg', sizes: '512x512', type: 'image/jpeg' },
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff2}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
