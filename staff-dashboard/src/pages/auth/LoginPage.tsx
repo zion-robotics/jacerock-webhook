@@ -49,6 +49,7 @@ export default function LoginPage() {
       <div className="w-full max-w-4xl bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden grid grid-cols-1 md:grid-cols-2">
         {/* left: form */}
         <div className="p-8 sm:p-12 flex flex-col justify-center">
+          <img src="/logo.png" alt="Jacerock Capital" className="h-14 w-auto object-contain mb-6" />
           <h1 className="text-2xl font-bold text-slate-800">Log in</h1>
           <p className="text-sm text-slate-500 mt-1 mb-8">Jacerock / AfrikBerry staff portal</p>
 
