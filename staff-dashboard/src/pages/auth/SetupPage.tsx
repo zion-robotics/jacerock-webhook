@@ -148,7 +148,10 @@ export default function SetupPage() {
 
         {/* right: form */}
         <div className="p-8 sm:p-12 flex flex-col justify-center">
-          <img src="/logo.png" alt="Jacerock Capital" className="h-14 w-auto object-contain mb-6" />
+          <div className="flex items-center gap-3 mb-6">
+            <img src="/logo.png" alt="Jacerock" className="h-12 w-12 object-contain flex-shrink-0" />
+            <span className="text-xl font-bold text-slate-800">Jacerock</span>
+          </div>
           <h1 className="text-2xl font-bold text-slate-800">Create admin account</h1>
           <p className="text-sm text-slate-500 mt-1 mb-8">Jacerock / AfrikBerry staff portal — first time setup</p>
 
