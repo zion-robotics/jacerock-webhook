@@ -3,23 +3,12 @@
   "short_name": "Jacerock",
   "description": "Jacerock Capital / AfrikBerry Staff Operations Dashboard",
   "theme_color": "#0f172a",
-  "background_color": "#0f172a",
+  "background_color": "#f8fafc",
   "display": "standalone",
   "orientation": "any",
-  "scope": "/",
   "start_url": "/",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icon-192.jpg", "sizes": "192x192", "type": "image/jpeg" },
+    { "src": "icon-512.jpg", "sizes": "512x512", "type": "image/jpeg" }
   ]
 }
