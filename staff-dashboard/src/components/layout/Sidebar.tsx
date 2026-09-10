@@ -7,6 +7,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
 import { supabase } from '../../services/supabase';
+import BrandLogo from '../ui/BrandLogo';
 import toast from 'react-hot-toast';
 
 interface SidebarProps {
@@ -77,11 +78,11 @@ export default function Sidebar({ open, onClose, collapsed = false, onToggleColl
 
         <div className="flex items-center justify-between p-6 border-b border-slate-700">
           {collapsed ? (
-            <img src="/logo.png" alt="Jacerock" className="h-12 w-12 object-contain mx-auto" />
+            <BrandLogo size="compact" className="mx-auto" />
           ) : (
-            <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="Jacerock" className="h-14 w-14 object-contain flex-shrink-0" />
-              <div>
+            <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
+              <BrandLogo size="sidebar" />
+              <div className="min-w-0">
                 <h1 className="text-white font-bold text-lg leading-tight">Jacerock</h1>
                 <p className="text-slate-400 text-xs">AfrikBerry Dashboard</p>
               </div>

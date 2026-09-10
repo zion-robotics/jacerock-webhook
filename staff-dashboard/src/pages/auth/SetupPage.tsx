@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/supabase';
+import BrandLogo from '../../components/ui/BrandLogo';
 import toast from 'react-hot-toast';
 
 export default function SetupPage() {
@@ -148,10 +149,10 @@ export default function SetupPage() {
 
         {/* right: form */}
         <div className="p-8 sm:p-12 flex flex-col justify-center">
-          <div className="flex items-center gap-4 mb-6">
-            <img src="/logo.png" alt="Jacerock" className="h-20 w-20 object-contain flex-shrink-0" />
-            <div>
-              <span className="text-2xl font-bold text-slate-800 leading-tight block">Jacerock</span>
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 mb-6">
+            <BrandLogo size="auth" />
+            <div className="min-w-0">
+              <span className="text-2xl sm:text-3xl font-bold text-slate-800 leading-tight block truncate">Jacerock</span>
               <span className="text-sm font-medium text-slate-500">AfrikBerry</span>
             </div>
           </div>
