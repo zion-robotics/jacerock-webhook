@@ -2,7 +2,6 @@ import { Menu, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAlertStore } from '../../store/alertStore';
 import { useAuthStore } from '../../store/authStore';
-import InstallButton from '../ui/InstallButton';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -32,7 +31,6 @@ export default function Header({ onMenuClick, title }: HeaderProps) {
         <h2 className="text-slate-800 font-semibold text-base md:text-lg">{title}</h2>
       </div>
       <div className="flex items-center gap-3">
-        <InstallButton />
         <button
           onClick={handleBellClick}
           className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
