@@ -7,9 +7,10 @@ export default function NotificationBanner() {
 
   useEffect(() => {
     if (!('Notification' in window)) return;
-    if (Notification.permission === 'default') {
-      setTimeout(() => setShow(true), 2000);
-    }
+    if (Notification.permission !== 'default') return;
+
+    const timer = window.setTimeout(() => setShow(true), 2000);
+    return () => window.clearTimeout(timer);
   }, []);
 
   async function handleEnable() {

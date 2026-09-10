@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
-import { sendHotNotification, playAlertSound, requestNotificationPermission } from '../../services/notifications';
+import { sendHotNotification, playAlertSound } from '../../services/notifications';
 import type { Transaction } from '../../types';
 import { AlertCircle, X, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,17 +12,10 @@ export default function HotAlert() {
   const { user } = useAuthStore();
   const { setPendingCount } = useAlertStore();
   const [alerts, setAlerts] = useState<Transaction[]>([]);
-  const [permissionRequested, setPermissionRequested] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) return;
-
-    // Request notification permission on first load
-    if (!permissionRequested) {
-      requestNotificationPermission();
-      setPermissionRequested(true);
-    }
 
     // Subscribe to new transactions reaching AWAITING_STAFF_APPROVAL
     const channel = supabase

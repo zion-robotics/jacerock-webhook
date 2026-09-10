@@ -9,21 +9,41 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPWA() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches
+      || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (standalone) return;
+    setIsIOS(ios);
+    if (ios) setShow(true);
+
     const handler = (e: Event) => {
       e.preventDefault();
       setPrompt(e as BeforeInstallPromptEvent);
       setShow(true);
     };
+    const installedHandler = () => {
+      setPrompt(null);
+      setShow(false);
+    };
+
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', installedHandler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', installedHandler);
+    };
   }, []);
 
   async function handleInstall() {
     if (!prompt) return;
     await prompt.prompt();
     const result = await prompt.userChoice;
+    setPrompt(null);
     if (result.outcome === 'accepted') {
       setShow(false);
     }
@@ -37,17 +57,21 @@ export default function InstallPWA() {
         <Download className="w-4 h-4" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-sm">Install Dashboard App</p>
+        <p className="font-semibold text-sm">{isIOS ? 'Add Dashboard to Home Screen' : 'Install Dashboard App'}</p>
         <p className="text-xs text-slate-300 mt-0.5">
-          Add to your home screen for quick access and push notifications
+          {isIOS
+            ? 'Tap Share, then Add to Home Screen for quick access.'
+            : 'Add to your home screen for quick access.'}
         </p>
         <div className="flex gap-2 mt-3">
-          <button
-            onClick={handleInstall}
-            className="bg-accent text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-          >
-            Install
-          </button>
+          {prompt && (
+            <button
+              onClick={handleInstall}
+              className="bg-accent text-white text-xs px-3 py-1.5 rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            >
+              Install
+            </button>
+          )}
           <button
             onClick={() => setShow(false)}
             className="text-slate-400 text-xs px-3 py-1.5 rounded-lg hover:text-white transition-colors"

@@ -13,8 +13,8 @@ export function sendHotNotification(title: string, body: string, options?: Notif
 
   const notification = new Notification(title, {
     body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: '/icon-192.jpg',
+    badge: '/icon-192.jpg',
     tag: 'jacerock-alert',
     requireInteraction: true,
     silent: false,
