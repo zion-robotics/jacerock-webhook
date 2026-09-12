@@ -34,6 +34,15 @@ wa.sendTemplate = async (to, templateName, variables, ...rest) => {
 const RESTART_KEYWORDS = ['cancel', 'restart', 'back', 'menu', 'start', 'home', 'stop'];
 const CANCEL_HINT = '\n\n_Type *cancel* at any time to return to the main menu._';
 
+const STATUS_LABELS = {
+  SETTLEMENT_COMPLETED: 'completed successfully ✅',
+  CLOSED: 'completed successfully ✅',
+  REJECTED: 'rejected ❌',
+  CANCELLED: 'cancelled',
+  AWAITING_STAFF_APPROVAL: 'still being processed ⏳',
+  UNDER_REVIEW: 'on hold, under review ⏳',
+};
+
 async function buildRateDisplay() {
   const rates = await db.getExchangeRates();
   const map = {};
@@ -64,14 +73,34 @@ async function showMainMenu(to) {
 }
 
 async function showMainMenuReturning(to, name) {
-  await wa.sendButtons(
-    to,
-    `Welcome back, ${name}! 👋\n\nGreat to see you again at Jacerock Capital Limited / AfrikBerry.\n\nHow can we assist you today?`,
-    [
-      { id: 'EXCHANGE_RATES', title: '📊 Exchange Rates' },
-      { id: 'CUSTOMER_CARE', title: '👩🏾‍💼 Customer Care' },
-    ]
-  );
+  // Check for a recent transaction to reference
+  const lastTx = await db.getLastTransactionByCustomer(to);
+
+  if (lastTx) {
+    const statusLabel = STATUS_LABELS[lastTx.status] || lastTx.status.replace(/_/g, ' ').toLowerCase();
+    const pairLabel = lastTx.currency_pair?.replace('_', ' → ') || '';
+
+    await wa.sendButtons(
+      to,
+      `Welcome back, ${name}! 👋\n\n` +
+      `Your last transaction *${lastTx.reference}* (${pairLabel}) was *${statusLabel}*.\n\n` +
+      `Would you like to start a new transaction today?`,
+      [
+        { id: 'EXCHANGE_RATES', title: '📊 Exchange Rates' },
+        { id: 'CUSTOMER_CARE', title: '👩🏾‍💼 Customer Care' },
+      ]
+    );
+  } else {
+    // Returning/verified but no transaction history yet (edge case)
+    await wa.sendButtons(
+      to,
+      `Welcome back, ${name}! 👋\n\nGreat to see you again at Jacerock Capital Limited / AfrikBerry.\n\nHow can we assist you today?`,
+      [
+        { id: 'EXCHANGE_RATES', title: '📊 Exchange Rates' },
+        { id: 'CUSTOMER_CARE', title: '👩🏾‍💼 Customer Care' },
+      ]
+    );
+  }
 }
 
 async function showCurrencyPairList(to) {
@@ -244,8 +273,8 @@ async function handleMessage(from, message, senderName) {
     await wa.sendButtons(from,
       `You have selected:\n\n*${pairLabel}*\nCurrent rate: *${rateData.rate}* ${toCurrency} per ${fromCurrency}\n\nHow would you like to enter the amount?`,
       [
-        { id: 'DIR_FROM', title: `I'm sending (${fromCurrency})` },
-        { id: 'DIR_TO', title: `They receive (${toCurrency})` },
+        { id: 'DIR_FROM', title: `I have ${fromCurrency} to send` },
+        { id: 'DIR_TO', title: `I want them to get ${toCurrency}` },
       ]
     );
     return;
@@ -263,8 +292,8 @@ async function handleMessage(from, message, senderName) {
     } else {
       await wa.sendButtons(from, `Please select an option:`,
         [
-          { id: 'DIR_FROM', title: `I'm sending (${fromCurrency})` },
-          { id: 'DIR_TO', title: `They receive (${toCurrency})` },
+          { id: 'DIR_FROM', title: `I have ${fromCurrency} to send` },
+          { id: 'DIR_TO', title: `I want them to get ${toCurrency}` },
         ]
       );
     }
@@ -283,11 +312,9 @@ async function handleMessage(from, message, senderName) {
 
     let amount, settlementAmount;
     if (amountDirection === 'TO') {
-      // They told us how much the recipient should receive — work backward
       settlementAmount = enteredAmount.toFixed(2);
       amount = (enteredAmount / rateNum).toFixed(2);
     } else {
-      // Default / FROM — they told us how much they're sending
       amount = enteredAmount;
       settlementAmount = (enteredAmount * rateNum).toFixed(2);
     }
@@ -499,10 +526,41 @@ async function handleMessage(from, message, senderName) {
     return;
   }
 
-  // PROCESSING
+  // PROCESSING — check real status instead of always saying "still processing"
   if (step === 'PROCESSING') {
     const transaction = await db.getTransactionById(sessionData.transactionId);
-    await wa.sendText(from, `Your transaction reference *${transaction?.reference}* is currently being processed by our team.\n\nPlease be patient. You will be notified once your transfer is complete.\n\nThank you for choosing Jacerock Capital Limited.`);
+
+    if (!transaction) {
+      await db.clearSession(from);
+      await showMainMenu(from);
+      return;
+    }
+
+    if (transaction.status === 'SETTLEMENT_COMPLETED' || transaction.status === 'CLOSED') {
+      await db.clearSession(from);
+      const customer = await db.getOrCreateCustomer(from, senderName);
+      await db.setSession(from, 'MAIN_MENU', { customerId: customer.id, kycName: transaction.kyc_name, isReturning: true });
+      await wa.sendButtons(from,
+        `✅ Your transaction *${transaction.reference}* (${transaction.currency_pair?.replace('_', ' → ')}) has been completed successfully!\n\nWould you like to start a new transaction today?`,
+        [
+          { id: 'EXCHANGE_RATES', title: '📊 Exchange Rates' },
+          { id: 'CUSTOMER_CARE', title: '👩🏾‍💼 Customer Care' },
+        ]
+      );
+    } else if (transaction.status === 'REJECTED') {
+      await db.clearSession(from);
+      const customer = await db.getOrCreateCustomer(from, senderName);
+      await db.setSession(from, 'MAIN_MENU', { customerId: customer.id, kycName: transaction.kyc_name, isReturning: true });
+      await wa.sendButtons(from,
+        `❌ Your transaction *${transaction.reference}* was rejected.${transaction.rejection_reason ? `\n\nReason: ${transaction.rejection_reason}` : ''}\n\nWould you like to start a new transaction, or contact Customer Care?`,
+        [
+          { id: 'EXCHANGE_RATES', title: '📊 Exchange Rates' },
+          { id: 'CUSTOMER_CARE', title: '👩🏾‍💼 Customer Care' },
+        ]
+      );
+    } else {
+      await wa.sendText(from, `Your transaction reference *${transaction.reference}* is currently being processed by our team.\n\nPlease be patient. You will be notified once your transfer is complete.\n\nThank you for choosing Jacerock Capital Limited.`);
+    }
     return;
   }
 
