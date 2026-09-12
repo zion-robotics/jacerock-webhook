@@ -328,6 +328,17 @@ async function uploadMedia(buffer, mimeType, whatsappNumber) {
   return data?.publicUrl || null;
 }
 
+async function getLastTransactionByCustomer(whatsappNumber) {
+  const { data } = await supabase
+    .from('transactions')
+    .select('*')
+    .eq('whatsapp_number', whatsappNumber)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+  return data || null;
+}
+
 module.exports = {
   getOrCreateCustomer,
   updateCustomerKYC,
