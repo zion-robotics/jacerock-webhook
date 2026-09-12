@@ -81,9 +81,9 @@ export default function ChatPage() {
       .from('messages')
       .select('*')
       .eq('whatsapp_number', number)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(100);
-    if (data) setMessages(data);
+    if (data) setMessages(data.reverse());
   }
 
   async function handleSelectSession(session: ConversationSession) {
