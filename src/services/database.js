@@ -365,4 +365,5 @@ module.exports = {
   saveMessage,
   getMessages,
   uploadMedia,
+  getLastTransactionByCustomer,
 };
