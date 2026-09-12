@@ -273,8 +273,8 @@ async function handleMessage(from, message, senderName) {
     await wa.sendButtons(from,
       `You have selected:\n\n*${pairLabel}*\nCurrent rate: *${rateData.rate}* ${toCurrency} per ${fromCurrency}\n\nHow would you like to enter the amount?`,
       [
-        { id: 'DIR_FROM', title: `I have ${fromCurrency} to send` },
-        { id: 'DIR_TO', title: `I want them to get ${toCurrency}` },
+        { id: 'DIR_FROM', title: `I'm sending ${fromCurrency}` },
+        { id: 'DIR_TO', title: `They receive ${toCurrency}` },
       ]
     );
     return;
