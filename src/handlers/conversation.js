@@ -34,6 +34,16 @@ wa.sendTemplate = async (to, templateName, variables, ...rest) => {
 const RESTART_KEYWORDS = ['cancel', 'restart', 'back', 'menu', 'start', 'home', 'stop'];
 const CANCEL_HINT = '\n\n_Type *cancel* at any time to return to the main menu._';
 
+// WhatsApp list limits: row title 24 characters, row description 72 characters, 10 rows total
+const WA_ROW_TITLE_MAX = 24;
+const WA_ROW_DESC_MAX = 72;
+const WA_MAX_ROWS = 10;
+
+function clip(value, max) {
+  const str = String(value ?? '').trim();
+  return str.length > max ? str.slice(0, max - 1) + '…' : str;
+}
+
 const STATUS_LABELS = {
   SETTLEMENT_COMPLETED: 'completed successfully ✅',
   CLOSED: 'completed successfully ✅',
@@ -144,7 +154,7 @@ async function handleMessage(from, message, senderName) {
   // ── BOT PAUSED CHECK (Human Takeover) ────────────────────────────────────
   const paused = await db.isBotPaused(from);
   if (paused) {
-    console.log(`⏸️  Bot paused for ${from} — message handled by staff`);
+    console.log(`⏸️  Bot paused for ${from}: message handled by staff`);
     return; // Staff handles this conversation from dashboard
   }
 
@@ -349,7 +359,14 @@ async function handleMessage(from, message, senderName) {
     }
     await db.setSession(from, 'BANK_SELECT', { ...sessionData, paymentMethod: 'BANK_TRANSFER' });
     const banks = await db.getBankAccounts();
-    const bankRows = banks.map(b => ({ id: b.id, title: b.bank_name, description: b.country }));
+
+    // WhatsApp rejects row titles over 24 characters (error 131009) and lists over 10 rows.
+    // The title is clipped, and the full bank name plus country goes in the description.
+    const bankRows = banks.slice(0, WA_MAX_ROWS).map(b => ({
+      id: b.id,
+      title: clip(b.bank_name, WA_ROW_TITLE_MAX),
+      description: clip(`${b.bank_name}${b.country ? ' | ' + b.country : ''}`, WA_ROW_DESC_MAX),
+    }));
     await wa.sendList(from,
       `Please select the bank account you would like to make your payment to:${CANCEL_HINT}`,
       'Select Bank',
@@ -526,7 +543,7 @@ async function handleMessage(from, message, senderName) {
     return;
   }
 
-  // PROCESSING — check real status instead of always saying "still processing"
+  // PROCESSING: check real status instead of always saying "still processing"
   if (step === 'PROCESSING') {
     const transaction = await db.getTransactionById(sessionData.transactionId);
 
