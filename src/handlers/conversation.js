@@ -2,32 +2,34 @@ const wa = require('../services/whatsapp');
 const db = require('../services/database');
 const { uploadReceiptToStorage } = require('../services/storage');
 
-// ── Wrap outbound sends so every message gets logged automatically ─────────
+// ── Wrap outbound sends so every delivered message gets logged automatically ──
+// A message is saved only when the send returned a result, so failed sends
+// no longer show up in the dashboard as if the customer received them.
 const _sendText = wa.sendText;
 wa.sendText = async (to, text, ...rest) => {
   const result = await _sendText(to, text, ...rest);
-  await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
+  if (result) await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
   return result;
 };
 
 const _sendButtons = wa.sendButtons;
 wa.sendButtons = async (to, text, buttons, ...rest) => {
   const result = await _sendButtons(to, text, buttons, ...rest);
-  await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
+  if (result) await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
   return result;
 };
 
 const _sendList = wa.sendList;
 wa.sendList = async (to, text, buttonLabel, sections, ...rest) => {
   const result = await _sendList(to, text, buttonLabel, sections, ...rest);
-  await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
+  if (result) await db.saveMessage(to, 'OUTBOUND', text, '', 'BOT');
   return result;
 };
 
 const _sendTemplate = wa.sendTemplate;
 wa.sendTemplate = async (to, templateName, variables, ...rest) => {
   const result = await _sendTemplate(to, templateName, variables, ...rest);
-  await db.saveMessage(to, 'OUTBOUND', `[Template: ${templateName}]`, '', 'BOT');
+  if (result) await db.saveMessage(to, 'OUTBOUND', `[Template: ${templateName}]`, '', 'BOT');
   return result;
 };
 
@@ -347,18 +349,27 @@ async function handleMessage(from, message, senderName) {
       await wa.sendText(from, `Please select a payment method from the options above.${CANCEL_HINT}`);
       return;
     }
+
+    // bankListFailures counts how many times the bank list failed to send in this transaction
+    const { bankListFailures = 0, ...baseData } = sessionData;
+
     if (replyId === 'CASH_DEPOSIT') {
-      await db.setSession(from, 'CASH_DEPOSIT', { ...sessionData, paymentMethod: 'CASH_DEPOSIT' });
+      await db.setSession(from, 'CASH_DEPOSIT', { ...baseData, paymentMethod: 'CASH_DEPOSIT' });
       await wa.sendText(from, `💵 CASH DEPOSIT\n\nPlease visit any of our approved deposit locations and make your deposit.\n\nOnce done, please upload your deposit receipt here.${CANCEL_HINT}`);
       return;
     }
     if (replyId === 'MOBILE_WALLET') {
-      await db.setSession(from, 'MOBILE_WALLET', { ...sessionData, paymentMethod: 'MOBILE_WALLET' });
+      await db.setSession(from, 'MOBILE_WALLET', { ...baseData, paymentMethod: 'MOBILE_WALLET' });
       await wa.sendText(from, `📱 MOBILE WALLET TRANSFER\n\nPlease contact our team via Customer Care for mobile wallet payment details.\n\nOnce your transfer is complete, please upload your receipt here.${CANCEL_HINT}`);
       return;
     }
-    await db.setSession(from, 'BANK_SELECT', { ...sessionData, paymentMethod: 'BANK_TRANSFER' });
+
+    // BANK TRANSFER
     const banks = await db.getBankAccounts();
+    if (!banks || banks.length === 0) {
+      await wa.sendText(from, `Bank transfer accounts are not available right now. Please choose another payment method or contact Customer Care.${CANCEL_HINT}`);
+      return;
+    }
 
     // WhatsApp rejects row titles over 24 characters (error 131009) and lists over 10 rows.
     // The title is clipped, and the full bank name plus country goes in the description.
@@ -367,11 +378,51 @@ async function handleMessage(from, message, senderName) {
       title: clip(b.bank_name, WA_ROW_TITLE_MAX),
       description: clip(`${b.bank_name}${b.country ? ' | ' + b.country : ''}`, WA_ROW_DESC_MAX),
     }));
-    await wa.sendList(from,
+
+    // Send the list first. The session only moves to BANK_SELECT if it was delivered.
+    const listResult = await wa.sendList(from,
       `Please select the bank account you would like to make your payment to:${CANCEL_HINT}`,
       'Select Bank',
       [{ title: 'Available Banks', rows: bankRows }]
     );
+
+    if (listResult) {
+      await db.setSession(from, 'BANK_SELECT', { ...baseData, paymentMethod: 'BANK_TRANSFER' });
+      return;
+    }
+
+    const failures = bankListFailures + 1;
+
+    if (failures === 1) {
+      // First failure: apologise and let the customer retry
+      await db.setSession(from, 'PAYMENT_METHOD', { ...baseData, bankListFailures: failures });
+      await wa.sendText(from, `Sorry, we could not load the bank list just now. Please try again by tapping Bank Transfer below.${CANCEL_HINT}`);
+      await wa.sendButtons(from, `Please select your preferred payment method:`, [
+        { id: 'BANK_TRANSFER', title: '🏦 Bank Transfer' },
+        { id: 'CASH_DEPOSIT', title: '💵 Cash Deposit' },
+        { id: 'MOBILE_WALLET', title: '📱 Mobile Wallet' },
+      ]);
+      return;
+    }
+
+    // Second failure or more: send the banks as a numbered text list
+    const numberedList = banks
+      .map((b, i) => `${i + 1}. ${b.bank_name}${b.country ? ` (${b.country})` : ''}`)
+      .join('\n');
+    const textResult = await wa.sendText(from,
+      `We are still unable to load the bank menu. Please reply with the number of the bank you want to pay to:\n\n${numberedList}${CANCEL_HINT}`
+    );
+
+    if (textResult) {
+      await db.setSession(from, 'BANK_SELECT', {
+        ...baseData,
+        paymentMethod: 'BANK_TRANSFER',
+        bankTextList: banks.map(b => b.id),
+      });
+    } else {
+      // Nothing more the bot can send. Keep the count so the next attempt also uses the text list.
+      await db.setSession(from, 'PAYMENT_METHOD', { ...baseData, bankListFailures: failures });
+    }
     return;
   }
 
@@ -404,16 +455,29 @@ async function handleMessage(from, message, senderName) {
 
   // BANK SELECT
   if (step === 'BANK_SELECT') {
-    if (!replyId) {
+    // bankTextList exists only when the customer was sent the numbered text list
+    const { bankTextList, ...baseData } = sessionData;
+    let selectedId = replyId;
+
+    if (!selectedId && Array.isArray(bankTextList) && textBody) {
+      const chosen = /^\d+$/.test(textBody) ? parseInt(textBody, 10) : 0;
+      if (chosen < 1 || chosen > bankTextList.length) {
+        await wa.sendText(from, `Please reply with a number from the list above.${CANCEL_HINT}`);
+        return;
+      }
+      selectedId = bankTextList[chosen - 1];
+    }
+
+    if (!selectedId) {
       await wa.sendText(from, `Please select a bank from the list above.${CANCEL_HINT}`);
       return;
     }
-    const bank = await db.getBankById(replyId);
+    const bank = await db.getBankById(selectedId);
     if (!bank) {
       await wa.sendText(from, `Invalid selection. Please try again.${CANCEL_HINT}`);
       return;
     }
-    await db.setSession(from, 'KYC_DISCLAIMER', { ...sessionData, selectedBankId: replyId, selectedBank: bank });
+    await db.setSession(from, 'KYC_DISCLAIMER', { ...baseData, selectedBankId: selectedId, selectedBank: bank });
     await wa.sendButtons(from,
       `⚠️ IMPORTANT NOTICE\n\nDear Customer,\n\nJacerock/AfrikBerry ONLY ACCEPTS BANK TRANSFERS FROM AN ACCOUNT WITH THE SAME ACCOUNT NAME PROVIDED DURING KYC VERIFICATION.\n\nThird-party transfers may be rejected or placed on hold pending verification.\n\nDo you wish to proceed?`,
       [
