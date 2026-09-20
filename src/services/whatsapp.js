@@ -20,6 +20,10 @@ const APPROVED_TEMPLATES = [
   'additional_info_required',
 ];
 
+// All send functions return the response data on success and null on failure.
+// Errors are still caught and logged so one failed send never crashes the flow,
+// but callers can now check the result to see whether the message was delivered.
+
 // Send plain text message
 async function sendText(to, text) {
   try {
@@ -33,6 +37,7 @@ async function sendText(to, text) {
     return res.data;
   } catch (err) {
     console.error('❌ sendText error:', err.response?.data || err.message);
+    return null;
   }
 }
 
@@ -58,6 +63,7 @@ async function sendButtons(to, bodyText, buttons) {
     return res.data;
   } catch (err) {
     console.error('❌ sendButtons error:', err.response?.data || err.message);
+    return null;
   }
 }
 
@@ -81,6 +87,7 @@ async function sendList(to, bodyText, buttonLabel, sections) {
     return res.data;
   } catch (err) {
     console.error('❌ sendList error:', err.response?.data || err.message);
+    return null;
   }
 }
 
