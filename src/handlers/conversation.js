@@ -353,11 +353,45 @@ async function handleMessage(from, message, senderName) {
     // bankListFailures counts how many times the bank list failed to send in this transaction
     const { bankListFailures = 0, ...baseData } = sessionData;
 
-    if (replyId === 'CASH_DEPOSIT') {
-      await db.setSession(from, 'CASH_DEPOSIT', { ...baseData, paymentMethod: 'CASH_DEPOSIT' });
-      await wa.sendText(from, `💵 CASH DEPOSIT\n\nPlease visit any of our approved deposit locations and make your deposit.\n\nOnce done, please upload your deposit receipt here.${CANCEL_HINT}`);
-      return;
-    }
+  if (replyId === 'CASH_DEPOSIT') {
+  await db.setSession(from, 'CASH_DEPOSIT_METHOD', { ...sessionData, paymentMethod: 'CASH_DEPOSIT' });
+  await wa.sendButtons(from,
+    `💵 CASH DEPOSIT\n\nPlease select your preferred cash deposit option:`,
+    [
+      { id: 'CASH_OFFICE', title: '🏢 Visit Our Office' },
+      { id: 'CASH_BANK', title: '🏦 Pay at Bank' },
+    ]
+  );
+  return;
+}
+
+// CASH DEPOSIT METHOD
+if (step === 'CASH_DEPOSIT_METHOD') {
+  if (replyId === 'CASH_OFFICE') {
+    await db.setSession(from, 'CASH_DEPOSIT', { ...sessionData });
+    await wa.sendText(from,
+      `🏢 OFFICE VISIT\n\nPlease visit us at our office:\n\n*Jacerock Capital Limited*\nMosque Complex, behind Marimoo Building\nAfricell Head Office, Kairaba Avenue\nThe Gambia\n\nOffice Hours: Monday to Friday, 9am to 5pm\n\nPlease bring the exact amount and your valid ID.\n\nOnce your deposit has been made, please upload your receipt here.${CANCEL_HINT}`
+    );
+  } else if (replyId === 'CASH_BANK') {
+    await db.setSession(from, 'CASH_DEPOSIT', { ...sessionData });
+    const banks = await db.getBankAccounts();
+    const bankRows = banks.map(b => ({ id: b.id, title: b.bank_name.substring(0, 20), description: b.country }));
+    await wa.sendList(from,
+      `🏦 BANK CASH DEPOSIT\n\nPlease select the bank where you would like to make your cash deposit:${CANCEL_HINT}`,
+      'Select Bank',
+      [{ title: 'Available Banks', rows: bankRows }]
+    );
+  } else {
+    await wa.sendButtons(from,
+      `Please select your preferred cash deposit option:`,
+      [
+        { id: 'CASH_OFFICE', title: '🏢 Visit Our Office' },
+        { id: 'CASH_BANK', title: '🏦 Pay at Bank' },
+      ]
+    );
+  }
+  return;
+}
     if (replyId === 'MOBILE_WALLET') {
       await db.setSession(from, 'MOBILE_WALLET', { ...baseData, paymentMethod: 'MOBILE_WALLET' });
       await wa.sendText(from, `📱 MOBILE WALLET TRANSFER\n\nPlease contact our team via Customer Care for mobile wallet payment details.\n\nOnce your transfer is complete, please upload your receipt here.${CANCEL_HINT}`);
