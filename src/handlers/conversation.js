@@ -312,36 +312,38 @@ async function handleMessage(from, message, senderName) {
     return;
   }
 
-  // AMOUNT INPUT
-  if (step === 'AMOUNT_INPUT') {
-    const enteredAmount = parseFloat(textBody);
-    if (!enteredAmount || isNaN(enteredAmount) || enteredAmount <= 0) {
-      await wa.sendText(from, `Please enter a valid amount (numbers only, e.g. 500):${CANCEL_HINT}`);
-      return;
-    }
-    const { rate, pairLabel, fromCurrency, toCurrency, amountDirection } = sessionData;
-    const rateNum = parseFloat(rate);
-
-    let amount, settlementAmount;
-    if (amountDirection === 'TO') {
-      settlementAmount = enteredAmount.toFixed(2);
-      amount = (enteredAmount / rateNum).toFixed(2);
-    } else {
-      amount = enteredAmount;
-      settlementAmount = (enteredAmount * rateNum).toFixed(2);
-    }
-
-    await db.setSession(from, 'PAYMENT_METHOD', { ...sessionData, amount, settlementAmount });
-    await wa.sendButtons(from,
-      `Thank you.\n\n*Transaction Summary*\n\nExchange: ${pairLabel}\nYou send: *${amount} ${fromCurrency}*\nRate: ${rate}\nRecipient receives: *${Number(settlementAmount).toLocaleString()} ${toCurrency}*\n\n⚠️ Rates are subject to change until payment is confirmed.\n\nPlease select your preferred payment method:`,
-      [
-        { id: 'BANK_TRANSFER', title: '🏦 Bank Transfer' },
-        { id: 'CASH_DEPOSIT', title: '💵 Cash Deposit' },
-        { id: 'MOBILE_WALLET', title: '📱 Mobile Wallet' },
-      ]
-    );
+// AMOUNT INPUT
+if (step === 'AMOUNT_INPUT') {
+  const enteredAmount = parseFloat(textBody);
+  if (!enteredAmount || isNaN(enteredAmount) || enteredAmount <= 0) {
+    await wa.sendText(from, `Please enter a valid amount (numbers only, e.g. 500):${CANCEL_HINT}`);
     return;
   }
+  const { rate, pairLabel, fromCurrency, toCurrency, amountDirection } = sessionData;
+  const rateNum = parseFloat(rate);
+
+  let amount, settlementAmount, calculationLine;
+  if (amountDirection === 'TO') {
+    settlementAmount = enteredAmount.toFixed(2);
+    amount = (enteredAmount / rateNum).toFixed(2);
+    calculationLine = `${Number(settlementAmount).toLocaleString()} ${toCurrency} ÷ ${rateNum} = ${Number(amount).toLocaleString()} ${fromCurrency}`;
+  } else {
+    amount = enteredAmount;
+    settlementAmount = (enteredAmount * rateNum).toFixed(2);
+    calculationLine = `${Number(amount).toLocaleString()} ${fromCurrency} × ${rateNum} = ${Number(settlementAmount).toLocaleString()} ${toCurrency}`;
+  }
+
+  await db.setSession(from, 'PAYMENT_METHOD', { ...sessionData, amount, settlementAmount });
+  await wa.sendButtons(from,
+    `Thank you.\n\n*Transaction Summary*\n\nExchange: ${pairLabel}\nYou send: *${amount} ${fromCurrency}*\nRate: ${rate}\n\n*Calculation:*\n${calculationLine}\n\nRecipient receives: *${Number(settlementAmount).toLocaleString()} ${toCurrency}*\n\n⚠️ Rates are subject to change until payment is confirmed.\n\nPlease select your preferred payment method:`,
+    [
+      { id: 'BANK_TRANSFER', title: '🏦 Bank Transfer' },
+      { id: 'CASH_DEPOSIT', title: '💵 Cash Deposit' },
+      { id: 'MOBILE_WALLET', title: '📱 Mobile Wallet' },
+    ]
+  );
+  return;
+}
 
   // PAYMENT METHOD
   if (step === 'PAYMENT_METHOD') {
