@@ -185,6 +185,25 @@ async function getBankById(id) {
   return data;
 }
 
+// ── MOBILE WALLETS ────────────────────────────────────────────────────────────
+
+async function getMobileWallets() {
+  const { data } = await supabase
+    .from('mobile_wallets')
+    .select('*')
+    .eq('is_active', true);
+  return data || [];
+}
+
+async function getMobileWalletById(id) {
+  const { data } = await supabase
+    .from('mobile_wallets')
+    .select('*')
+    .eq('id', id)
+    .single();
+  return data;
+}
+
 // ── TRANSACTIONS ──────────────────────────────────────────────────────────────
 
 async function createTransaction(whatsappNumber, customerId, kycName, currencyPair, rate) {
@@ -339,6 +358,170 @@ async function getLastTransactionByCustomer(whatsappNumber) {
   return data || null;
 }
 
+// ── BUSINESS HOURS / HOLIDAYS / OUTAGE ────────────────────────────────────────
+
+async function getBusinessHours() {
+  const { data } = await supabase
+    .from('business_hours')
+    .select('*')
+    .order('day_of_week', { ascending: true });
+  return data || [];
+}
+
+async function updateBusinessHours(dayOfWeek, updates, updatedBy) {
+  const { data } = await supabase
+    .from('business_hours')
+    .update({ ...updates, updated_by: updatedBy, updated_at: new Date().toISOString() })
+    .eq('day_of_week', dayOfWeek)
+    .select()
+    .single();
+  return data;
+}
+
+async function getHolidayByDate(dateStr) {
+  // dateStr expected as 'YYYY-MM-DD'
+  const { data } = await supabase
+    .from('holidays')
+    .select('*')
+    .eq('holiday_date', dateStr)
+    .maybeSingle();
+  return data || null;
+}
+
+async function getAllHolidays() {
+  const { data } = await supabase
+    .from('holidays')
+    .select('*')
+    .order('holiday_date', { ascending: true });
+  return data || [];
+}
+
+async function createHoliday(holidayDate, name, type, customMessage, createdBy) {
+  const { data } = await supabase
+    .from('holidays')
+    .insert({
+      holiday_date: holidayDate,
+      name,
+      type,
+      custom_message: customMessage || null,
+      created_by: createdBy,
+    })
+    .select()
+    .single();
+  return data;
+}
+
+async function deleteHoliday(id) {
+  await supabase.from('holidays').delete().eq('id', id);
+}
+
+async function getBusinessStatus() {
+  const { data } = await supabase
+    .from('business_status')
+    .select('*')
+    .eq('id', 1)
+    .single();
+  return data;
+}
+
+async function updateAwayMessage(message, updatedBy) {
+  const { data } = await supabase
+    .from('business_status')
+    .update({ away_message: message, updated_by: updatedBy, updated_at: new Date().toISOString() })
+    .eq('id', 1)
+    .select()
+    .single();
+  return data;
+}
+
+async function setOutage(isActive, message, expectedResolution, setBy) {
+  const { data } = await supabase
+    .from('business_status')
+    .update({
+      outage_active: isActive,
+      outage_message: message || null,
+      outage_expected_resolution: expectedResolution || null,
+      outage_set_by: setBy,
+      outage_set_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', 1)
+    .select()
+    .single();
+  return data;
+}
+
+// Returns { open: boolean, reason: string, message: string|null }
+// reason is one of: 'OUTAGE', 'HOLIDAY_CLOSED', 'HOLIDAY_ONLINE_ONLY', 'SCHEDULED_CLOSED', 'OPEN'
+async function getAvailabilityStatus() {
+  const status = await getBusinessStatus();
+
+  // 1. Manual outage always takes priority
+  if (status?.outage_active) {
+    return {
+      open: false,
+      reason: 'OUTAGE',
+      message: status.outage_message || status.away_message,
+    };
+  }
+
+  // Current time in GMT
+  const now = new Date();
+  const gmtNow = new Date(now.toLocaleString('en-US', { timeZone: 'GMT' }));
+  const dateStr = gmtNow.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  // 2. Holiday check
+  const holiday = await getHolidayByDate(dateStr);
+  if (holiday) {
+    if (holiday.type === 'CLOSED') {
+      return {
+        open: false,
+        reason: 'HOLIDAY_CLOSED',
+        message: holiday.custom_message || status?.away_message,
+      };
+    }
+    if (holiday.type === 'ONLINE_ONLY') {
+      return {
+        open: true,
+        reason: 'HOLIDAY_ONLINE_ONLY',
+        message: holiday.custom_message || null,
+      };
+    }
+  }
+
+  // 3. Scheduled weekly hours
+  const dayOfWeek = gmtNow.getDay(); // 0 = Sunday ... 6 = Saturday
+  const { data: hoursRow } = await supabase
+    .from('business_hours')
+    .select('*')
+    .eq('day_of_week', dayOfWeek)
+    .single();
+
+  if (!hoursRow || !hoursRow.is_open) {
+    return {
+      open: false,
+      reason: 'SCHEDULED_CLOSED',
+      message: status?.away_message,
+    };
+  }
+
+  const currentMinutes = gmtNow.getHours() * 60 + gmtNow.getMinutes();
+  const [openH, openM] = hoursRow.open_time.split(':').map(Number);
+  const [closeH, closeM] = hoursRow.close_time.split(':').map(Number);
+  const openMinutes = openH * 60 + openM;
+  const closeMinutes = closeH * 60 + closeM;
+
+  if (currentMinutes < openMinutes || currentMinutes >= closeMinutes) {
+    return {
+      open: false,
+      reason: 'SCHEDULED_CLOSED',
+      message: status?.away_message,
+    };
+  }
+
+  return { open: true, reason: 'OPEN', message: null };
+}
+
 module.exports = {
   getOrCreateCustomer,
   updateCustomerKYC,
@@ -354,6 +537,8 @@ module.exports = {
   updateExchangeRate,
   getBankAccounts,
   getBankById,
+  getMobileWallets,
+  getMobileWalletById,
   createTransaction,
   updateTransaction,
   getTransactionById,
@@ -366,4 +551,14 @@ module.exports = {
   getMessages,
   uploadMedia,
   getLastTransactionByCustomer,
+  getBusinessHours,
+  updateBusinessHours,
+  getHolidayByDate,
+  getAllHolidays,
+  createHoliday,
+  deleteHoliday,
+  getBusinessStatus,
+  updateAwayMessage,
+  setOutage,
+  getAvailabilityStatus,
 };
