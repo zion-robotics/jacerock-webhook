@@ -3,8 +3,6 @@ const db = require('../services/database');
 const { uploadReceiptToStorage } = require('../services/storage');
 
 // ── Wrap outbound sends so every delivered message gets logged automatically ──
-// A message is saved only when the send returned a result, so failed sends
-// no longer show up in the dashboard as if the customer received them.
 const _sendText = wa.sendText;
 wa.sendText = async (to, text, ...rest) => {
   const result = await _sendText(to, text, ...rest);
@@ -34,6 +32,7 @@ wa.sendTemplate = async (to, templateName, variables, ...rest) => {
 };
 
 const RESTART_KEYWORDS = ['cancel', 'restart', 'back', 'menu', 'start', 'home', 'stop'];
+const HOURS_KEYWORDS = ['hours', 'business hours', 'opening hours', 'open time', 'what time'];
 const CANCEL_HINT = '\n\n_Type *cancel* at any time to return to the main menu._';
 
 // WhatsApp list limits: row title 24 characters, row description 72 characters, 10 rows total
@@ -54,6 +53,30 @@ const STATUS_LABELS = {
   AWAITING_STAFF_APPROVAL: 'still being processed ⏳',
   UNDER_REVIEW: 'on hold, under review ⏳',
 };
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+function to12Hour(timeStr) {
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+async function formatBusinessHoursText() {
+  const hours = await db.getBusinessHours();
+  const byDay = {};
+  hours.forEach(h => { byDay[h.day_of_week] = h; });
+
+  const lines = DAY_NAMES.map((name, i) => {
+    const row = byDay[i];
+    if (!row || !row.is_open) return `${name}: Closed`;
+    return `${name}: ${to12Hour(row.open_time)} – ${to12Hour(row.close_time)} GMT`;
+  });
+
+  return `🕐 *Our Business Hours (GMT)*\n\n${lines.join('\n')}`;
+}
 
 async function buildRateDisplay() {
   const rates = await db.getExchangeRates();
@@ -85,7 +108,6 @@ async function showMainMenu(to) {
 }
 
 async function showMainMenuReturning(to, name) {
-  // Check for a recent transaction to reference
   const lastTx = await db.getLastTransactionByCustomer(to);
 
   if (lastTx) {
@@ -103,7 +125,6 @@ async function showMainMenuReturning(to, name) {
       ]
     );
   } else {
-    // Returning/verified but no transaction history yet (edge case)
     await wa.sendButtons(
       to,
       `Welcome back, ${name}! 👋\n\nGreat to see you again at Jacerock Capital Limited / AfrikBerry.\n\nHow can we assist you today?`,
@@ -158,6 +179,26 @@ async function handleMessage(from, message, senderName) {
   if (paused) {
     console.log(`⏸️  Bot paused for ${from}: message handled by staff`);
     return; // Staff handles this conversation from dashboard
+  }
+
+  // ── "What are your hours?" self-serve — answered even while closed ───────
+  if (textBody && HOURS_KEYWORDS.some(k => textBody.toLowerCase().includes(k))) {
+    const hoursText = await formatBusinessHoursText();
+    await wa.sendText(from, hoursText);
+    return;
+  }
+
+  // ── BUSINESS AVAILABILITY GATE ─────────────────────────────────────────
+  // Rates are the bedrock of the business — no rate/transaction activity is
+  // permitted outside business hours, including finishing an in-progress
+  // transaction. This intentionally overrides everything below it.
+  const availability = await db.getAvailabilityStatus();
+  if (!availability.open) {
+    // Reset the session so any stale, unconfirmed rate/amount is discarded.
+    // When the customer returns during business hours they start fresh.
+    await db.clearSession(from);
+    await wa.sendText(from, availability.message || 'We are currently closed for business. Please check back during our business hours.');
+    return;
   }
 
   // GLOBAL RESTART
@@ -312,38 +353,38 @@ async function handleMessage(from, message, senderName) {
     return;
   }
 
-// AMOUNT INPUT
-if (step === 'AMOUNT_INPUT') {
-  const enteredAmount = parseFloat(textBody);
-  if (!enteredAmount || isNaN(enteredAmount) || enteredAmount <= 0) {
-    await wa.sendText(from, `Please enter a valid amount (numbers only, e.g. 500):${CANCEL_HINT}`);
+  // AMOUNT INPUT
+  if (step === 'AMOUNT_INPUT') {
+    const enteredAmount = parseFloat(textBody);
+    if (!enteredAmount || isNaN(enteredAmount) || enteredAmount <= 0) {
+      await wa.sendText(from, `Please enter a valid amount (numbers only, e.g. 500):${CANCEL_HINT}`);
+      return;
+    }
+    const { rate, pairLabel, fromCurrency, toCurrency, amountDirection } = sessionData;
+    const rateNum = parseFloat(rate);
+
+    let amount, settlementAmount, calculationLine;
+    if (amountDirection === 'TO') {
+      settlementAmount = enteredAmount.toFixed(2);
+      amount = (enteredAmount / rateNum).toFixed(2);
+      calculationLine = `${Number(settlementAmount).toLocaleString()} ${toCurrency} ÷ ${rateNum} = ${Number(amount).toLocaleString()} ${fromCurrency}`;
+    } else {
+      amount = enteredAmount;
+      settlementAmount = (enteredAmount * rateNum).toFixed(2);
+      calculationLine = `${Number(amount).toLocaleString()} ${fromCurrency} × ${rateNum} = ${Number(settlementAmount).toLocaleString()} ${toCurrency}`;
+    }
+
+    await db.setSession(from, 'PAYMENT_METHOD', { ...sessionData, amount, settlementAmount });
+    await wa.sendButtons(from,
+      `Thank you.\n\n*Transaction Summary*\n\nExchange: ${pairLabel}\nYou send: *${amount} ${fromCurrency}*\nRate: ${rate}\n\n*Calculation:*\n${calculationLine}\n\nRecipient receives: *${Number(settlementAmount).toLocaleString()} ${toCurrency}*\n\n⚠️ Rates are subject to change until payment is confirmed.\n\nPlease select your preferred payment method:`,
+      [
+        { id: 'BANK_TRANSFER', title: '🏦 Bank Transfer' },
+        { id: 'CASH_DEPOSIT', title: '💵 Cash Deposit' },
+        { id: 'MOBILE_WALLET', title: '📱 Mobile Wallet' },
+      ]
+    );
     return;
   }
-  const { rate, pairLabel, fromCurrency, toCurrency, amountDirection } = sessionData;
-  const rateNum = parseFloat(rate);
-
-  let amount, settlementAmount, calculationLine;
-  if (amountDirection === 'TO') {
-    settlementAmount = enteredAmount.toFixed(2);
-    amount = (enteredAmount / rateNum).toFixed(2);
-    calculationLine = `${Number(settlementAmount).toLocaleString()} ${toCurrency} ÷ ${rateNum} = ${Number(amount).toLocaleString()} ${fromCurrency}`;
-  } else {
-    amount = enteredAmount;
-    settlementAmount = (enteredAmount * rateNum).toFixed(2);
-    calculationLine = `${Number(amount).toLocaleString()} ${fromCurrency} × ${rateNum} = ${Number(settlementAmount).toLocaleString()} ${toCurrency}`;
-  }
-
-  await db.setSession(from, 'PAYMENT_METHOD', { ...sessionData, amount, settlementAmount });
-  await wa.sendButtons(from,
-    `Thank you.\n\n*Transaction Summary*\n\nExchange: ${pairLabel}\nYou send: *${amount} ${fromCurrency}*\nRate: ${rate}\n\n*Calculation:*\n${calculationLine}\n\nRecipient receives: *${Number(settlementAmount).toLocaleString()} ${toCurrency}*\n\n⚠️ Rates are subject to change until payment is confirmed.\n\nPlease select your preferred payment method:`,
-    [
-      { id: 'BANK_TRANSFER', title: '🏦 Bank Transfer' },
-      { id: 'CASH_DEPOSIT', title: '💵 Cash Deposit' },
-      { id: 'MOBILE_WALLET', title: '📱 Mobile Wallet' },
-    ]
-  );
-  return;
-}
 
   // PAYMENT METHOD
   if (step === 'PAYMENT_METHOD') {
@@ -352,18 +393,26 @@ if (step === 'AMOUNT_INPUT') {
       return;
     }
 
-    // bankListFailures counts how many times the bank list failed to send in this transaction
     const { bankListFailures = 0, ...baseData } = sessionData;
 
     if (replyId === 'CASH_DEPOSIT') {
       await db.setSession(from, 'CASH_DEPOSIT_METHOD', { ...baseData, paymentMethod: 'CASH_DEPOSIT' });
-      await wa.sendButtons(from,
-        `💵 CASH DEPOSIT\n\nPlease select your preferred cash deposit option:`,
-        [
-          { id: 'CASH_OFFICE', title: '🏢 Visit Our Office' },
-          { id: 'CASH_BANK', title: '🏦 Pay at Bank' },
-        ]
-      );
+
+      // On an ONLINE_ONLY holiday the physical office is closed — only offer bank deposit.
+      if (availability.reason === 'HOLIDAY_ONLINE_ONLY') {
+        await wa.sendButtons(from,
+          `💵 CASH DEPOSIT\n\nOur office is closed today, but online deposits are still available:`,
+          [{ id: 'CASH_BANK', title: '🏦 Pay at Bank' }]
+        );
+      } else {
+        await wa.sendButtons(from,
+          `💵 CASH DEPOSIT\n\nPlease select your preferred cash deposit option:`,
+          [
+            { id: 'CASH_OFFICE', title: '🏢 Visit Our Office' },
+            { id: 'CASH_BANK', title: '🏦 Pay at Bank' },
+          ]
+        );
+      }
       return;
     }
 
@@ -380,15 +429,12 @@ if (step === 'AMOUNT_INPUT') {
       return;
     }
 
-    // WhatsApp rejects row titles over 24 characters (error 131009) and lists over 10 rows.
-    // The title is clipped, and the full bank name plus country goes in the description.
     const bankRows = banks.slice(0, WA_MAX_ROWS).map(b => ({
       id: b.id,
       title: clip(b.bank_name, WA_ROW_TITLE_MAX),
       description: clip(`${b.bank_name}${b.country ? ' | ' + b.country : ''}`, WA_ROW_DESC_MAX),
     }));
 
-    // Send the list first. The session only moves to BANK_SELECT if it was delivered.
     const listResult = await wa.sendList(from,
       `Please select the bank account you would like to make your payment to:${CANCEL_HINT}`,
       'Select Bank',
@@ -403,7 +449,6 @@ if (step === 'AMOUNT_INPUT') {
     const failures = bankListFailures + 1;
 
     if (failures === 1) {
-      // First failure: apologise and let the customer retry
       await db.setSession(from, 'PAYMENT_METHOD', { ...baseData, bankListFailures: failures });
       await wa.sendText(from, `Sorry, we could not load the bank list just now. Please try again by tapping Bank Transfer below.${CANCEL_HINT}`);
       await wa.sendButtons(from, `Please select your preferred payment method:`, [
@@ -414,7 +459,6 @@ if (step === 'AMOUNT_INPUT') {
       return;
     }
 
-    // Second failure or more: send the banks as a numbered text list
     const numberedList = banks
       .map((b, i) => `${i + 1}. ${b.bank_name}${b.country ? ` (${b.country})` : ''}`)
       .join('\n');
@@ -429,7 +473,6 @@ if (step === 'AMOUNT_INPUT') {
         bankTextList: banks.map(b => b.id),
       });
     } else {
-      // Nothing more the bot can send. Keep the count so the next attempt also uses the text list.
       await db.setSession(from, 'PAYMENT_METHOD', { ...baseData, bankListFailures: failures });
     }
     return;
@@ -492,7 +535,6 @@ if (step === 'AMOUNT_INPUT') {
 
   // BANK SELECT
   if (step === 'BANK_SELECT') {
-    // bankTextList exists only when the customer was sent the numbered text list
     const { bankTextList, ...baseData } = sessionData;
     let selectedId = replyId;
 
