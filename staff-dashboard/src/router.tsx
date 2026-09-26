@@ -18,6 +18,7 @@ import ChatPage from './pages/staff/ChatPage';
 import TransactionHistoryPage from './pages/admin/TransactionHistoryPage';
 import CompletedTransactionPage from './pages/admin/CompletedTransactionPage';
 import MyActivityPage from './pages/staff/MyActivityPage';
+import AvailabilityPage from './pages/admin/AvailabilityPage';
 import HotAlert from './components/alerts/HotAlert';
 import NotificationBanner from './components/alerts/NotificationBanner';
 
@@ -72,6 +73,7 @@ function AppRoutes() {
           <Route path="history" element={<TransactionHistoryPage />} />
           <Route path="history/:id" element={<CompletedTransactionPage />} />
           <Route path="chat" element={<ChatPage />} />
+          <Route path="availability" element={<AvailabilityPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
         {/* Staff Routes */}
@@ -82,6 +84,7 @@ function AppRoutes() {
           <Route path="history" element={<TransactionHistoryPage />} />
           <Route path="history/:id" element={<CompletedTransactionPage />} />
           <Route path="activity" element={<MyActivityPage />} />
+          <Route path="availability" element={<AvailabilityPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
