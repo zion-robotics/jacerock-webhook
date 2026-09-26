@@ -21,6 +21,8 @@ import MyActivityPage from './pages/staff/MyActivityPage';
 import AvailabilityPage from './pages/admin/AvailabilityPage';
 import HotAlert from './components/alerts/HotAlert';
 import NotificationBanner from './components/alerts/NotificationBanner';
+import HolidaysPage from './pages/admin/HolidaysPage';
+import MobileWalletsPage from './pages/admin/MobileWalletsPage';
 
 function ProtectedRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const { user } = useAuthStore();
@@ -74,6 +76,8 @@ function AppRoutes() {
           <Route path="history/:id" element={<CompletedTransactionPage />} />
           <Route path="chat" element={<ChatPage />} />
           <Route path="availability" element={<AvailabilityPage />} />
+          <Route path="holidays" element={<HolidaysPage />} />
+          <Route path="wallets" element={<MobileWalletsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
         {/* Staff Routes */}
@@ -85,6 +89,8 @@ function AppRoutes() {
           <Route path="history/:id" element={<CompletedTransactionPage />} />
           <Route path="activity" element={<MyActivityPage />} />
           <Route path="availability" element={<AvailabilityPage />} />
+          <Route path="holidays" element={<HolidaysPage />} />
+          <Route path="wallets" element={<MobileWalletsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
