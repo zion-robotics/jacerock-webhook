@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
 import { useAuthStore } from '../../store/authStore';
 import type { ExchangeRate } from '../../types';
-import { TrendingUp, Save, RefreshCw } from 'lucide-react';
+import { TrendingUp, Save, RefreshCw, Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ExchangeRatesPage() {
@@ -11,6 +11,14 @@ export default function ExchangeRatesPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuthStore();
+
+  const [showModal, setShowModal] = useState(false);
+  const [acting, setActing] = useState(false);
+  const [form, setForm] = useState({
+    from_currency: '',
+    to_currency: '',
+    rate: '',
+  });
 
   useEffect(() => {
     fetchRates();
@@ -68,6 +76,55 @@ export default function ExchangeRatesPage() {
     fetchRates();
   }
 
+  function handleFormChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: name === 'from_currency' || name === 'to_currency' ? value.toUpperCase() : value });
+  }
+
+  async function handleAddPair(e: React.FormEvent) {
+    e.preventDefault();
+    const fromC = form.from_currency.trim();
+    const toC = form.to_currency.trim();
+    const rateNum = parseFloat(form.rate);
+
+    if (!fromC || !toC) {
+      toast.error('Please enter both currencies');
+      return;
+    }
+    if (isNaN(rateNum) || rateNum <= 0) {
+      toast.error('Please enter a valid rate');
+      return;
+    }
+
+    const currencyPair = `${fromC}_${toC}`;
+    if (rates.some(r => r.currency_pair === currencyPair)) {
+      toast.error(`${fromC} → ${toC} already exists`);
+      return;
+    }
+
+    setActing(true);
+    try {
+      const { error } = await supabase.from('exchange_rates').insert({
+        currency_pair: currencyPair,
+        from_currency: fromC,
+        to_currency: toC,
+        rate: rateNum,
+        is_active: true,
+        updated_by: user?.full_name,
+      });
+      if (error) throw error;
+      toast.success(`${fromC} → ${toC} added`);
+      setShowModal(false);
+      setForm({ from_currency: '', to_currency: '', rate: '' });
+      fetchRates();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to add currency pair';
+      toast.error(message);
+    } finally {
+      setActing(false);
+    }
+  }
+
   function timeAgo(dateStr: string) {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
@@ -87,13 +144,22 @@ export default function ExchangeRatesPage() {
             Changes take effect immediately in the WhatsApp bot
           </p>
         </div>
-        <button
-          onClick={fetchRates}
-          className="flex items-center justify-center gap-2 text-sm text-slate-500 border border-slate-200 px-3 py-2.5 rounded-lg hover:bg-slate-50 bg-white flex-shrink-0"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Refresh
-        </button>
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={fetchRates}
+            className="flex items-center justify-center gap-2 text-sm text-slate-500 border border-slate-200 px-3 py-2.5 rounded-lg hover:bg-slate-50 bg-white"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center justify-center gap-2 bg-accent text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Pair
+          </button>
+        </div>
       </div>
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-700">
@@ -107,6 +173,12 @@ export default function ExchangeRatesPage() {
 
         {loading ? (
           <div className="p-8 text-center text-slate-400 text-sm animate-pulse">Loading rates...</div>
+        ) : rates.length === 0 ? (
+          <div className="p-10 text-center">
+            <TrendingUp className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500 text-sm">No currency pairs yet</p>
+            <p className="text-slate-400 text-xs mt-1">Click Add Pair to get started</p>
+          </div>
         ) : (
           <div className="divide-y divide-slate-50">
             {rates.map(rate => (
@@ -163,6 +235,86 @@ export default function ExchangeRatesPage() {
           </div>
         )}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-800">Add Currency Pair</h3>
+              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPair} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">From Currency</label>
+                  <input
+                    name="from_currency"
+                    value={form.from_currency}
+                    onChange={handleFormChange}
+                    required
+                    maxLength={5}
+                    placeholder="USD"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">To Currency</label>
+                  <input
+                    name="to_currency"
+                    value={form.to_currency}
+                    onChange={handleFormChange}
+                    required
+                    maxLength={5}
+                    placeholder="GMD"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-600 mb-1">Rate</label>
+                <input
+                  name="rate"
+                  type="number"
+                  step="0.01"
+                  value={form.rate}
+                  onChange={handleFormChange}
+                  required
+                  placeholder="e.g. 75.55"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+                <p className="text-xs text-slate-400 mt-1">
+                  1 {form.from_currency || 'FROM'} = {form.rate || '?'} {form.to_currency || 'TO'}
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
+                This pair will not appear in the bot's currency selection list until you also add it there in the code — this only adds the rate to the database.
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 border border-slate-200 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={acting}
+                  className="flex-1 bg-accent text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {acting ? 'Adding...' : 'Add Pair'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
