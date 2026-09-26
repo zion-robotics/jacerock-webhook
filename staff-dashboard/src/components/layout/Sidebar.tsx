@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ListChecks, Users, Activity,
   TrendingUp, Landmark, LogOut, X, MessageSquare,
-  ChevronLeft, ChevronRight, Shield, History
+  ChevronLeft, ChevronRight, Shield, History, Clock
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
@@ -26,6 +26,7 @@ const adminLinks = [
   { to: '/admin/banks', icon: Landmark, label: 'Bank Accounts' },
   { to: '/admin/history', icon: History, label: 'History' },
   { to: '/admin/chat', icon: MessageSquare, label: 'Live Chat' },
+  { to: '/admin/availability', icon: Clock, label: 'Availability' },
   { to: '/admin/settings', icon: Shield, label: 'Settings' },
 ];
 
@@ -34,6 +35,7 @@ const staffLinks = [
   { to: '/queue/chat', icon: MessageSquare, label: 'Live Chat' },
   { to: '/queue/history', icon: History, label: 'History' },
   { to: '/queue/activity', icon: Activity, label: 'My Activity' },
+  { to: '/queue/availability', icon: Clock, label: 'Availability' },
 ];
 
 export default function Sidebar({ open, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
