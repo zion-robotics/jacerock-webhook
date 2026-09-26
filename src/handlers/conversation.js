@@ -45,6 +45,18 @@ function clip(value, max) {
   return str.length > max ? str.slice(0, max - 1) + '…' : str;
 }
 
+// Best-effort flag emoji per currency code; falls back to a generic icon for
+// any currency added later that isn't in this list, so new pairs never break.
+const CURRENCY_FLAGS = {
+  GMD: '🇬🇲', NGN: '🇳🇬', USD: '🇺🇸', EUR: '🇪🇺', GBP: '🇬🇧',
+  CAD: '🇨🇦', CFA: '🇨🇫', USDT: '💲', GHS: '🇬🇭', XOF: '🇸🇳',
+  ZAR: '🇿🇦', KES: '🇰🇪',
+};
+
+function flagFor(currency) {
+  return CURRENCY_FLAGS[currency] || '💱';
+}
+
 const STATUS_LABELS = {
   SETTLEMENT_COMPLETED: 'completed successfully ✅',
   CLOSED: 'completed successfully ✅',
@@ -80,18 +92,18 @@ async function formatBusinessHoursText() {
 
 async function buildRateDisplay() {
   const rates = await db.getExchangeRates();
-  const map = {};
-  rates.forEach(r => { map[r.currency_pair] = r.rate; });
+  if (!rates.length) {
+    return `JACEROCK / AFRIKBERRY\n📊 DAILY EXCHANGE RATE\n\nRates are currently unavailable. Please check back shortly.`;
+  }
+
+  const lines = rates.map(r => {
+    const [fromC, toC] = r.currency_pair.split('_');
+    return `${flagFor(fromC)} ${fromC} ➡️ ${toC}\n➡️ ${r.rate}`;
+  });
+
   return `JACEROCK / AFRIKBERRY\n📊 DAILY EXCHANGE RATE\n\n` +
-    `🇬🇲 GMD ➡️ NGN\n➡️ ${map['GMD_NGN'] || 'N/A'}\n\n` +
-    `🇳🇬 NGN ➡️ GMD\n➡️ ${map['NGN_GMD'] || 'N/A'}\n\n` +
-    `🇺🇸 USD ➡️ GMD\n➡️ ${map['USD_GMD'] || 'N/A'}\n\n` +
-    `🇪🇺 EURO ➡️ GMD\n➡️ ${map['EUR_GMD'] || 'N/A'}\n\n` +
-    `🇬🇧 GBP ➡️ GMD\n➡️ ${map['GBP_GMD'] || 'N/A'}\n\n` +
-    `🇨🇦 CAD ➡️ GMD\n➡️ ${map['CAD_GMD'] || 'N/A'}\n\n` +
-    `🇨🇫 CEFA ➡️ GMD\n➡️ ${map['CFA_GMD'] || 'N/A'}\n\n` +
-    `💲 USDT ➡️ GMD\n➡️ ${map['USDT_GMD'] || 'N/A'}\n\n` +
-    `━━━━━━━━━━━━━━━━━━\n⚠️ IMPORTANT NOTICE\n\n` +
+    lines.join('\n\n') +
+    `\n\n━━━━━━━━━━━━━━━━━━\n⚠️ IMPORTANT NOTICE\n\n` +
     `Exchange rates are subject to market volatility and may change without prior notice.\n` +
     `Rates are reviewed every 60 minutes.`;
 }
@@ -136,21 +148,30 @@ async function showMainMenuReturning(to, name) {
   }
 }
 
+// Currency pairs are now read live from the database, so adding a pair on the
+// dashboard makes it selectable in the bot immediately — no code change needed.
 async function showCurrencyPairList(to) {
+  const rates = await db.getExchangeRates();
+
+  if (!rates.length) {
+    await wa.sendText(to, `Sorry, no currency pairs are currently available. Please try again later or contact Customer Care.${CANCEL_HINT}`);
+    return false;
+  }
+
+  const rows = rates.slice(0, WA_MAX_ROWS).map(r => {
+    const [fromC, toC] = r.currency_pair.split('_');
+    return {
+      id: r.currency_pair,
+      title: clip(`${flagFor(fromC)} ${fromC} → ${toC}`, WA_ROW_TITLE_MAX),
+    };
+  });
+
   await wa.sendList(to,
     `Please select the currency pair you wish to transact:${CANCEL_HINT}`,
     'Select Currency Pair',
-    [{ title: 'Available Currency Pairs', rows: [
-      { id: 'GMD_NGN', title: '🇬🇲 GMD → NGN' },
-      { id: 'NGN_GMD', title: '🇳🇬 NGN → GMD' },
-      { id: 'USD_GMD', title: '🇺🇸 USD → GMD' },
-      { id: 'EUR_GMD', title: '🇪🇺 EUR → GMD' },
-      { id: 'GBP_GMD', title: '🇬🇧 GBP → GMD' },
-      { id: 'CAD_GMD', title: '🇨🇦 CAD → GMD' },
-      { id: 'CFA_GMD', title: '🇨🇫 CEFA → GMD' },
-      { id: 'USDT_GMD', title: '💲 USDT → GMD' },
-    ]}]
+    [{ title: 'Available Currency Pairs', rows }]
   );
+  return true;
 }
 
 async function handleMessage(from, message, senderName) {
@@ -298,14 +319,10 @@ async function handleMessage(from, message, senderName) {
 
   // CURRENCY SELECT
   if (step === 'CURRENCY_SELECT') {
-    const validPairs = ['GMD_NGN','NGN_GMD','USD_GMD','EUR_GMD','GBP_GMD','CAD_GMD','CFA_GMD','USDT_GMD'];
-    if (!replyId || !validPairs.includes(replyId)) {
+    const rateData = replyId ? await db.getRateByCurrencyPair(replyId) : null;
+    if (!replyId || !rateData || !rateData.is_active) {
       await wa.sendText(from, `Please select a currency pair from the list above.${CANCEL_HINT}`);
-      return;
-    }
-    const rateData = await db.getRateByCurrencyPair(replyId);
-    if (!rateData) {
-      await wa.sendText(from, `Sorry, that currency pair is currently unavailable. Please try another or type *cancel* to return to the menu.`);
+      await showCurrencyPairList(from);
       return;
     }
     const [fromCurrency, toCurrency] = replyId.split('_');
