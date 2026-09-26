@@ -292,7 +292,7 @@ export default function ExchangeRatesPage() {
               </div>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-700">
-                This pair will not appear in the bot's currency selection list until you also add it there in the code — this only adds the rate to the database.
+                This pair will be immediately selectable by customers on WhatsApp once added.
               </div>
 
               <div className="flex gap-3 pt-2">
