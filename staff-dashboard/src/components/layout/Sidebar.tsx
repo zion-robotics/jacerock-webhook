@@ -2,13 +2,14 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, ListChecks, Users, Activity,
   TrendingUp, Landmark, LogOut, X, MessageSquare,
-  ChevronLeft, ChevronRight, Shield, History, Clock
+  ChevronLeft, ChevronRight, Shield, History, Clock, Calendar, Smartphone
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useAlertStore } from '../../store/alertStore';
 import { supabase } from '../../services/supabase';
 import BrandLogo from '../ui/BrandLogo';
 import toast from 'react-hot-toast';
+
 
 interface SidebarProps {
   open: boolean;
@@ -24,6 +25,8 @@ const adminLinks = [
   { to: '/admin/logs', icon: Activity, label: 'Activity Logs' },
   { to: '/admin/rates', icon: TrendingUp, label: 'Exchange Rates' },
   { to: '/admin/banks', icon: Landmark, label: 'Bank Accounts' },
+  { to: '/admin/holidays', icon: Calendar, label: 'Holidays' },
+  { to: '/admin/wallets', icon: Smartphone, label: 'Mobile Wallets' },
   { to: '/admin/history', icon: History, label: 'History' },
   { to: '/admin/chat', icon: MessageSquare, label: 'Live Chat' },
   { to: '/admin/availability', icon: Clock, label: 'Availability' },
@@ -36,6 +39,8 @@ const staffLinks = [
   { to: '/queue/history', icon: History, label: 'History' },
   { to: '/queue/activity', icon: Activity, label: 'My Activity' },
   { to: '/queue/availability', icon: Clock, label: 'Availability' },
+  { to: '/queue/holidays', icon: Calendar, label: 'Holidays' },
+  { to: '/queue/wallets', icon: Smartphone, label: 'Mobile Wallets' },
 ];
 
 export default function Sidebar({ open, onClose, collapsed = false, onToggleCollapse }: SidebarProps) {
