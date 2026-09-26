@@ -189,13 +189,8 @@ async function handleMessage(from, message, senderName) {
   }
 
   // ── BUSINESS AVAILABILITY GATE ─────────────────────────────────────────
-  // Rates are the bedrock of the business — no rate/transaction activity is
-  // permitted outside business hours, including finishing an in-progress
-  // transaction. This intentionally overrides everything below it.
   const availability = await db.getAvailabilityStatus();
   if (!availability.open) {
-    // Reset the session so any stale, unconfirmed rate/amount is discarded.
-    // When the customer returns during business hours they start fresh.
     await db.clearSession(from);
     await wa.sendText(from, availability.message || 'We are currently closed for business. Please check back during our business hours.');
     return;
@@ -398,7 +393,6 @@ async function handleMessage(from, message, senderName) {
     if (replyId === 'CASH_DEPOSIT') {
       await db.setSession(from, 'CASH_DEPOSIT_METHOD', { ...baseData, paymentMethod: 'CASH_DEPOSIT' });
 
-      // On an ONLINE_ONLY holiday the physical office is closed — only offer bank deposit.
       if (availability.reason === 'HOLIDAY_ONLINE_ONLY') {
         await wa.sendButtons(from,
           `💵 CASH DEPOSIT\n\nOur office is closed today, but online deposits are still available:`,
@@ -417,8 +411,29 @@ async function handleMessage(from, message, senderName) {
     }
 
     if (replyId === 'MOBILE_WALLET') {
-      await db.setSession(from, 'MOBILE_WALLET', { ...baseData, paymentMethod: 'MOBILE_WALLET' });
-      await wa.sendText(from, `📱 MOBILE WALLET TRANSFER\n\nPlease contact our team via Customer Care for mobile wallet payment details.\n\nOnce your transfer is complete, please upload your receipt here.${CANCEL_HINT}`);
+      const wallets = await db.getMobileWallets();
+      if (!wallets || wallets.length === 0) {
+        await wa.sendText(from, `Mobile wallet payments are not available right now. Please choose another payment method or contact Customer Care.${CANCEL_HINT}`);
+        return;
+      }
+
+      const walletRows = wallets.slice(0, WA_MAX_ROWS).map(w => ({
+        id: w.id,
+        title: clip(w.wallet_name, WA_ROW_TITLE_MAX),
+        description: clip(`${w.wallet_name}${w.country ? ' | ' + w.country : ''}`, WA_ROW_DESC_MAX),
+      }));
+
+      const listResult = await wa.sendList(from,
+        `📱 MOBILE WALLET\n\nPlease select the wallet you would like to pay to:${CANCEL_HINT}`,
+        'Select Wallet',
+        [{ title: 'Available Wallets', rows: walletRows }]
+      );
+
+      if (listResult) {
+        await db.setSession(from, 'MOBILE_WALLET_SELECT', { ...baseData, paymentMethod: 'MOBILE_WALLET' });
+      } else {
+        await wa.sendText(from, `Sorry, we could not load the wallet list just now. Please try again or contact Customer Care.${CANCEL_HINT}`);
+      }
       return;
     }
 
@@ -503,6 +518,24 @@ async function handleMessage(from, message, senderName) {
         ]
       );
     }
+    return;
+  }
+
+  // MOBILE WALLET SELECT
+  if (step === 'MOBILE_WALLET_SELECT') {
+    if (!replyId) {
+      await wa.sendText(from, `Please select a wallet from the list above.${CANCEL_HINT}`);
+      return;
+    }
+    const wallet = await db.getMobileWalletById(replyId);
+    if (!wallet) {
+      await wa.sendText(from, `Invalid selection. Please try again.${CANCEL_HINT}`);
+      return;
+    }
+    await db.setSession(from, 'MOBILE_WALLET', { ...sessionData });
+    await wa.sendText(from,
+      `📱 MOBILE WALLET PAYMENT\n\nWallet: *${wallet.wallet_name}*\nAccount Name: *${wallet.account_name}*\nAccount Number: *${wallet.account_number}*\n\nPlease make your payment only after confirming the details above.\n\nOnce payment has been completed, please upload your payment receipt here.${CANCEL_HINT}`
+    );
     return;
   }
 
